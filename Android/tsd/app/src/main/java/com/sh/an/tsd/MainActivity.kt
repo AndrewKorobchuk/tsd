@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.sh.an.tsd.ui.login.LoginScreen
+import com.sh.an.tsd.ui.main.MainScreen
 import com.sh.an.tsd.ui.settings.ConnectionSettingsScreen
 import com.sh.an.tsd.ui.theme.TsdTheme
 
@@ -29,14 +30,17 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun TsdApp() {
     var currentScreen by remember { mutableStateOf("login") }
+    var isLoggedIn by remember { mutableStateOf(false) }
     
-    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+    if (!isLoggedIn) {
+        // Экран входа
         when (currentScreen) {
             "login" -> {
                 LoginScreen(
                     onLoginClick = { username, password ->
-                        // TODO: Реализовать логику входа
+                        // Заглушка логина - считаем что залогинились
                         println("Login attempt: $username")
+                        isLoggedIn = true
                     },
                     onSettingsClick = {
                         currentScreen = "settings"
@@ -56,6 +60,9 @@ fun TsdApp() {
                 )
             }
         }
+    } else {
+        // Главный экран после входа
+        MainScreen()
     }
 }
 
