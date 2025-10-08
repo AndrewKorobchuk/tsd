@@ -16,7 +16,9 @@ import androidx.compose.ui.unit.sp
 import com.sh.an.tsd.ui.theme.TsdTheme
 
 @Composable
-fun DirectoriesScreen() {
+fun DirectoriesScreen(
+    onNomenclatureClick: () -> Unit = {}
+) {
     var searchQuery by remember { mutableStateOf("") }
     
     Column(
@@ -43,7 +45,12 @@ fun DirectoriesScreen() {
             items(getDirectories()) { directory ->
                 DirectoryCard(
                     directory = directory,
-                    onItemClick = { /* TODO: Открыть справочник */ }
+                    onItemClick = { 
+                        when (directory.id) {
+                            "1" -> onNomenclatureClick() // Товари -> Номенклатура
+                            else -> { /* TODO: Открыть другие справочники */ }
+                        }
+                    }
                 )
             }
         }

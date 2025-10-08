@@ -21,6 +21,7 @@ import com.sh.an.tsd.ui.theme.TsdTheme
 @Composable
 fun MainScreen() {
     var selectedTab by remember { mutableStateOf(0) }
+    var currentScreen by remember { mutableStateOf("main") }
     
     val tabs = listOf(
         TabItem("Документи", Icons.Filled.Description),
@@ -45,14 +46,16 @@ fun MainScreen() {
             )
         },
         bottomBar = {
-            NavigationBar {
-                tabs.forEachIndexed { index, tab ->
-                    NavigationBarItem(
-                        icon = { Icon(tab.icon, contentDescription = tab.title) },
-                        label = { Text(tab.title) },
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index }
-                    )
+            if (currentScreen == "main") {
+                NavigationBar {
+                    tabs.forEachIndexed { index, tab ->
+                        NavigationBarItem(
+                            icon = { Icon(tab.icon, contentDescription = tab.title) },
+                            label = { Text(tab.title) },
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index }
+                        )
+                    }
                 }
             }
         }
@@ -62,10 +65,21 @@ fun MainScreen() {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            when (selectedTab) {
-                0 -> DocumentsScreen()
-                1 -> DirectoriesScreen()
-                2 -> SettingsScreen()
+            when (currentScreen) {
+                "main" -> {
+                    when (selectedTab) {
+                        0 -> DocumentsScreen()
+                        1 -> DirectoriesScreen(
+                            onNomenclatureClick = { currentScreen = "nomenclature" }
+                        )
+                        2 -> SettingsScreen()
+                    }
+                }
+                "nomenclature" -> {
+                    com.sh.an.tsd.ui.nomenclature.NomenclatureScreen(
+                        onBackClick = { currentScreen = "main" }
+                    )
+                }
             }
         }
     }
