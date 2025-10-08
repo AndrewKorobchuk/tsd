@@ -36,14 +36,14 @@ fun DocumentsScreen() {
             singleLine = true
         )
         
-        // Список документов
+        // Список типов документов
         LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(getSampleDocuments()) { document ->
-                DocumentCard(
-                    document = document,
-                    onItemClick = { /* TODO: Открыть документ */ }
+            items(getDocumentTypes()) { documentType ->
+                DocumentTypeCard(
+                    documentType = documentType,
+                    onItemClick = { /* TODO: Открыть тип документа */ }
                 )
             }
         }
@@ -51,75 +51,98 @@ fun DocumentsScreen() {
 }
 
 @Composable
-fun DocumentCard(
-    document: Document,
+fun DocumentTypeCard(
+    documentType: DocumentType,
     onItemClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .height(120.dp),
         onClick = onItemClick,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            // Иконка
+            Card(
+                modifier = Modifier.size(64.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = documentType.color.copy(alpha = 0.1f)
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = documentType.icon,
+                        contentDescription = documentType.title,
+                        tint = documentType.color,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            // Текстовая информация
+            Column(
+                modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = document.number,
-                    fontSize = 16.sp,
+                    text = documentType.title,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
                 Text(
-                    text = document.date,
+                    text = documentType.description,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 18.sp
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Text(
+                    text = "Документів: ${documentType.documentCount}",
                     fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = documentType.color,
+                    fontWeight = FontWeight.Medium
                 )
             }
             
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(
-                text = document.description,
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurface
+            // Стрелка
+            Icon(
+                imageVector = Icons.Filled.ChevronRight,
+                contentDescription = "Открыть",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp)
             )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = when (document.status) {
-                        DocumentStatus.NEW -> Icons.Filled.FiberNew
-                        DocumentStatus.IN_PROGRESS -> Icons.Filled.HourglassEmpty
-                        DocumentStatus.COMPLETED -> Icons.Filled.CheckCircle
-                    },
-                    contentDescription = document.status.name,
-                    tint = when (document.status) {
-                        DocumentStatus.NEW -> MaterialTheme.colorScheme.primary
-                        DocumentStatus.IN_PROGRESS -> MaterialTheme.colorScheme.secondary
-                        DocumentStatus.COMPLETED -> MaterialTheme.colorScheme.tertiary
-                    },
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = document.status.displayName,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
         }
     }
 }
+
+data class DocumentType(
+    val id: String,
+    val title: String,
+    val description: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val color: androidx.compose.ui.graphics.Color,
+    val documentCount: Int
+)
 
 data class Document(
     val id: String,
@@ -133,6 +156,59 @@ enum class DocumentStatus(val displayName: String) {
     NEW("Новый"),
     IN_PROGRESS("В работе"),
     COMPLETED("Завершен")
+}
+
+fun getDocumentTypes(): List<DocumentType> {
+    return listOf(
+        DocumentType(
+            id = "1",
+            title = "Інвентаризація",
+            description = "Проведення інвентаризації товарів на складі",
+            icon = Icons.Filled.Inventory,
+            color = androidx.compose.ui.graphics.Color(0xFF2196F3),
+            documentCount = 5
+        ),
+        DocumentType(
+            id = "2",
+            title = "Прихідні накладні",
+            description = "Документи приходу товарів на склад",
+            icon = Icons.Filled.Input,
+            color = androidx.compose.ui.graphics.Color(0xFF4CAF50),
+            documentCount = 12
+        ),
+        DocumentType(
+            id = "3",
+            title = "Видаткові накладні",
+            description = "Документи видачі товарів зі складу",
+            icon = Icons.Filled.Output,
+            color = androidx.compose.ui.graphics.Color(0xFFFF9800),
+            documentCount = 8
+        ),
+        DocumentType(
+            id = "4",
+            title = "Переміщення",
+            description = "Документи переміщення між складами",
+            icon = Icons.Filled.SwapHoriz,
+            color = androidx.compose.ui.graphics.Color(0xFF9C27B0),
+            documentCount = 3
+        ),
+        DocumentType(
+            id = "5",
+            title = "Списання",
+            description = "Документи списання товарів",
+            icon = Icons.Filled.Delete,
+            color = androidx.compose.ui.graphics.Color(0xFFF44336),
+            documentCount = 2
+        ),
+        DocumentType(
+            id = "6",
+            title = "Оприбуткування",
+            description = "Документи оприбуткування товарів",
+            icon = Icons.Filled.AddBox,
+            color = androidx.compose.ui.graphics.Color(0xFF00BCD4),
+            documentCount = 7
+        )
+    )
 }
 
 fun getSampleDocuments(): List<Document> {
