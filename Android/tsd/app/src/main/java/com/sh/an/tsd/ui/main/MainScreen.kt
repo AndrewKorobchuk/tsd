@@ -22,6 +22,8 @@ import com.sh.an.tsd.ui.theme.TsdTheme
 fun MainScreen() {
     var selectedTab by remember { mutableStateOf(0) }
     var currentScreen by remember { mutableStateOf("main") }
+    var currentCategoryId by remember { mutableStateOf("") }
+    var currentCategoryName by remember { mutableStateOf("") }
     
     val tabs = listOf(
         TabItem("Документи", Icons.Filled.Description),
@@ -70,14 +72,27 @@ fun MainScreen() {
                     when (selectedTab) {
                         0 -> DocumentsScreen()
                         1 -> DirectoriesScreen(
-                            onNomenclatureClick = { currentScreen = "nomenclature" }
+                            onNomenclatureClick = { currentScreen = "nomenclature_categories" }
                         )
                         2 -> SettingsScreen()
                     }
                 }
-                "nomenclature" -> {
-                    com.sh.an.tsd.ui.nomenclature.NomenclatureScreen(
-                        onBackClick = { currentScreen = "main" }
+                "nomenclature_categories" -> {
+                    com.sh.an.tsd.ui.nomenclature.NomenclatureCategoriesScreen(
+                        onBackClick = { currentScreen = "main" },
+                        onCategoryClick = { categoryId ->
+                            currentCategoryId = categoryId
+                            currentCategoryName = getCategoryNameById(categoryId)
+                            currentScreen = "nomenclature_items"
+                        }
+                    )
+                }
+                "nomenclature_items" -> {
+                    com.sh.an.tsd.ui.nomenclature.NomenclatureItemsScreen(
+                        categoryId = currentCategoryId,
+                        categoryName = currentCategoryName,
+                        onBackClick = { currentScreen = "nomenclature_categories" },
+                        onItemClick = { /* TODO: Открыть детали товара */ }
                     )
                 }
             }
@@ -89,6 +104,21 @@ data class TabItem(
     val title: String,
     val icon: ImageVector
 )
+
+// Функция для получения названия категории по ID
+fun getCategoryNameById(categoryId: String): String {
+    return when (categoryId) {
+        "1" -> "Хлібобулочні вироби"
+        "2" -> "Молочні продукти"
+        "3" -> "М'ясо та ковбаси"
+        "4" -> "Овочі та фрукти"
+        "5" -> "Крупи та цукор"
+        "6" -> "Консерви"
+        "7" -> "Напої"
+        "8" -> "Солодощі"
+        else -> "Невідома категорія"
+    }
+}
 
 @Preview(showBackground = true)
 @Composable
