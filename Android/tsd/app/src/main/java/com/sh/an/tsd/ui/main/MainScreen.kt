@@ -17,16 +17,23 @@ import com.sh.an.tsd.ui.directories.DirectoriesScreen
 import com.sh.an.tsd.ui.settings.SettingsScreen
 import com.sh.an.tsd.ui.units.UnitsScreen
 import com.sh.an.tsd.ui.units.UnitsViewModel
+import com.sh.an.tsd.ui.directories.DirectoriesViewModel
+import com.sh.an.tsd.ui.nomenclature.NomenclatureCategoriesViewModel
+import com.sh.an.tsd.ui.nomenclature.NomenclatureItemsViewModel
 import com.sh.an.tsd.data.repository.AuthRepository
 import com.sh.an.tsd.ui.theme.TsdTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     onLogoutClick: () -> Unit = {},
     unitsViewModel: UnitsViewModel? = null,
+    directoriesViewModel: DirectoriesViewModel? = null,
+    nomenclatureCategoriesViewModel: NomenclatureCategoriesViewModel? = null,
+    nomenclatureItemsViewModel: NomenclatureItemsViewModel? = null,
     authRepository: AuthRepository? = null
 ) {
     var selectedTab by remember { mutableStateOf(0) }
@@ -90,35 +97,47 @@ fun MainScreen(
                         when (selectedTab) {
                             0 -> DocumentsScreen()
                             1 -> {
-                                if (unitsViewModel != null) {
-                                    val unitsCount by unitsViewModel.localUnitsCount.collectAsState()
+                                if (directoriesViewModel != null) {
+                                    val unitsCount by directoriesViewModel.unitsCount.collectAsState()
+                                    val categoriesCount by directoriesViewModel.categoriesCount.collectAsState()
+                                    val nomenclatureCount by directoriesViewModel.nomenclatureCount.collectAsState()
+                                    
                                     DirectoriesScreen(
                                         onNomenclatureClick = { currentScreen = "nomenclature_categories" },
                                         onUnitsClick = { currentScreen = "units" },
-                                        unitsCount = unitsCount
+                                        unitsCount = unitsCount,
+                                        categoriesCount = categoriesCount,
+                                        nomenclatureCount = nomenclatureCount
                                     )
                                 } else {
                                     DirectoriesScreen(
                                         onNomenclatureClick = { currentScreen = "nomenclature_categories" },
                                         onUnitsClick = { currentScreen = "units" },
-                                        unitsCount = 0
+                                        unitsCount = 0,
+                                        categoriesCount = 0,
+                                        nomenclatureCount = 0
                                     )
                                 }
                             }
                             2 -> {
-                                if (unitsViewModel != null && authRepository != null) {
-                                    val isLoadingDirectories by unitsViewModel.isLoading.collectAsState()
-                                    val directoriesError by unitsViewModel.errorMessage.collectAsState()
+                                if (directoriesViewModel != null && authRepository != null) {
+                                    val isLoadingDirectories by directoriesViewModel.isLoading.collectAsState()
+                                    val directoriesError by directoriesViewModel.errorMessage.collectAsState()
+                                    val syncProgress by directoriesViewModel.syncProgress.collectAsState()
                                     
                                     SettingsScreen(
                                         onLoadDirectoriesClick = {
                                             val token = "Bearer ${authRepository.getAccessToken()}"
-                                            unitsViewModel.syncUnitsFromServer(token)
+                                            directoriesViewModel.syncAllDirectories(token)
                                         },
                                         isLoadingDirectories = isLoadingDirectories,
                                         directoriesError = directoriesError,
+                                        syncProgress = syncProgress,
                                         onClearDirectoriesError = {
-                                            unitsViewModel.clearError()
+                                            directoriesViewModel.clearError()
+                                        },
+                                        onClearProgress = {
+                                            directoriesViewModel.clearProgress()
                                         }
                                     )
                                 } else {
@@ -128,22 +147,85 @@ fun MainScreen(
                         }
                     }
                 "nomenclature_categories" -> {
-                    com.sh.an.tsd.ui.nomenclature.NomenclatureCategoriesScreen(
-                        onBackClick = { currentScreen = "main" },
-                        onCategoryClick = { categoryId ->
-                            currentCategoryId = categoryId
-                            currentCategoryName = getCategoryNameById(categoryId)
-                            currentScreen = "nomenclature_items"
-                        }
-                    )
+                    if (nomenclatureCategoriesViewModel != null) {
+                        val categories by nomenclatureCategoriesViewModel.categories.collectAsState()
+                        val isLoading by nomenclatureCategoriesViewModel.isLoading.collectAsState()
+                        val errorMessage by nomenclatureCategoriesViewModel.errorMessage.collectAsState()
+                        
+                        com.sh.an.tsd.ui.nomenclature.NomenclatureCategoriesScreen(
+                            categories = categories,
+                            isLoading = isLoading,
+                            errorMessage = errorMessage,
+                            onBackClick = { currentScreen = "main" },
+                            onCategoryClick = { categoryId ->
+                                currentCategoryId = categoryId
+                                currentCategoryName = getCategoryNameById(categoryId)
+                                currentScreen = "nomenclature_items"
+                            },
+                            onSearchQueryChange = { query ->
+                                nomenclatureCategoriesViewModel.searchCategories(query)
+                            },
+                            onClearError = {
+                                nomenclatureCategoriesViewModel.clearError()
+                            }
+                        )
+                    } else {
+                        com.sh.an.tsd.ui.nomenclature.NomenclatureCategoriesScreen(
+                            categories = emptyList(),
+                            isLoading = false,
+                            errorMessage = null,
+                            onBackClick = { currentScreen = "main" },
+                            onCategoryClick = { categoryId ->
+                                currentCategoryId = categoryId
+                                currentCategoryName = getCategoryNameById(categoryId)
+                                currentScreen = "nomenclature_items"
+                            },
+                            onSearchQueryChange = {},
+                            onClearError = {}
+                        )
+                    }
                 }
                     "nomenclature_items" -> {
-                        com.sh.an.tsd.ui.nomenclature.NomenclatureItemsScreen(
-                            categoryId = currentCategoryId,
-                            categoryName = currentCategoryName,
-                            onBackClick = { currentScreen = "nomenclature_categories" },
-                            onItemClick = { /* TODO: Открыть детали товара */ }
-                        )
+                        if (nomenclatureItemsViewModel != null) {
+                            val nomenclature by nomenclatureItemsViewModel.nomenclature.collectAsState()
+                            val isLoading by nomenclatureItemsViewModel.isLoading.collectAsState()
+                            val errorMessage by nomenclatureItemsViewModel.errorMessage.collectAsState()
+                            
+                            // Устанавливаем categoryId в ViewModel
+                            LaunchedEffect(currentCategoryId) {
+                                if (currentCategoryId.isNotEmpty()) {
+                                    nomenclatureItemsViewModel.setCategoryId(currentCategoryId.toInt())
+                                }
+                            }
+                            
+                            com.sh.an.tsd.ui.nomenclature.NomenclatureItemsScreen(
+                                nomenclature = nomenclature,
+                                isLoading = isLoading,
+                                errorMessage = errorMessage,
+                                categoryId = currentCategoryId,
+                                categoryName = currentCategoryName,
+                                onBackClick = { currentScreen = "nomenclature_categories" },
+                                onItemClick = { /* TODO: Открыть детали товара */ },
+                                onSearchQueryChange = { query ->
+                                    nomenclatureItemsViewModel.searchNomenclature(query)
+                                },
+                                onClearError = {
+                                    nomenclatureItemsViewModel.clearError()
+                                }
+                            )
+                        } else {
+                            com.sh.an.tsd.ui.nomenclature.NomenclatureItemsScreen(
+                                nomenclature = emptyList(),
+                                isLoading = false,
+                                errorMessage = null,
+                                categoryId = currentCategoryId,
+                                categoryName = currentCategoryName,
+                                onBackClick = { currentScreen = "nomenclature_categories" },
+                                onItemClick = { /* TODO: Открыть детали товара */ },
+                                onSearchQueryChange = {},
+                                onClearError = {}
+                            )
+                        }
                     }
                     "units" -> {
                         if (unitsViewModel != null && authRepository != null) {

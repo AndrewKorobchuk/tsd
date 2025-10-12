@@ -19,7 +19,9 @@ import com.sh.an.tsd.ui.theme.TsdTheme
 fun DirectoriesScreen(
     onNomenclatureClick: () -> Unit = {},
     onUnitsClick: () -> Unit = {},
-    unitsCount: Int = 0
+    unitsCount: Int = 0,
+    categoriesCount: Int = 0,
+    nomenclatureCount: Int = 0
 ) {
     var searchQuery by remember { mutableStateOf("") }
     
@@ -44,7 +46,7 @@ fun DirectoriesScreen(
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(getDirectories(unitsCount)) { directory ->
+            items(getDirectories(unitsCount, categoriesCount, nomenclatureCount)) { directory ->
                 DirectoryCard(
                     directory = directory,
                     onItemClick = { 
@@ -127,14 +129,14 @@ data class Directory(
     val itemCount: Int
 )
 
-fun getDirectories(unitsCount: Int = 0): List<Directory> {
+fun getDirectories(unitsCount: Int = 0, categoriesCount: Int = 0, nomenclatureCount: Int = 0): List<Directory> {
     return listOf(
         Directory(
             id = "1",
             name = "Товари",
             description = "Справочник товаров и услуг",
             icon = Icons.Filled.Inventory,
-            itemCount = 1250
+            itemCount = nomenclatureCount
         ),
         Directory(
             id = "2",
@@ -159,13 +161,20 @@ fun getDirectories(unitsCount: Int = 0): List<Directory> {
         ),
         Directory(
             id = "5",
+            name = "Категорії товарів",
+            description = "Справочник категорий номенклатуры",
+            icon = Icons.Filled.Category,
+            itemCount = categoriesCount
+        ),
+        Directory(
+            id = "6",
             name = "Ставки ПДВ",
             description = "Справочник налоговых ставок",
             icon = Icons.Filled.Percent,
             itemCount = 5
         ),
         Directory(
-            id = "6",
+            id = "7",
             name = "Країни",
             description = "Справочник стран",
             icon = Icons.Filled.Public,

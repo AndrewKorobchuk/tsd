@@ -1,82 +1,59 @@
 package com.sh.an.tsd.data.repository
 
 import com.sh.an.tsd.data.api.NomenclatureApiService
+import com.sh.an.tsd.data.database.NomenclatureDao
 import com.sh.an.tsd.data.model.Nomenclature
-import com.sh.an.tsd.data.model.toNomenclature
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import java.io.IOException
 
 class NomenclatureRepository(
-    private val apiService: NomenclatureApiService
+    private val nomenclatureApiService: NomenclatureApiService,
+    private val nomenclatureDao: NomenclatureDao
 ) {
-    
-    suspend fun getNomenclature(
-        page: Int = 1,
-        limit: Int = 100,
-        search: String? = null,
-        category: String? = null
-    ): Flow<ApiResult<List<Nomenclature>>> = flow {
-        try {
-            emit(ApiResult.loading())
-            
-            val response = apiService.getNomenclature(page, limit, search, category)
-            
+
+    val allActiveNomenclature: Flow<List<Nomenclature>> = nomenclatureDao.getAllActiveNomenclature()
+
+    fun getActiveNomenclatureByCategory(categoryId: Int): Flow<List<Nomenclature>> {
+        return nomenclatureDao.getActiveNomenclatureByCategory(categoryId)
+    }
+
+    fun searchActiveNomenclature(query: String): Flow<List<Nomenclature>> {
+        return nomenclatureDao.searchActiveNomenclature(query)
+    }
+
+    fun searchActiveNomenclatureByCategory(categoryId: Int, query: String): Flow<List<Nomenclature>> {
+        return nomenclatureDao.searchActiveNomenclatureByCategory(categoryId, query)
+    }
+
+    suspend fun syncNomenclatureFromServer(token: String): Result<Unit> {
+        return try {
+            val response = nomenclatureApiService.getNomenclature(authorization = token)
             if (response.isSuccessful) {
-                val nomenclatureResponse = response.body()
-                if (nomenclatureResponse?.success == true) {
-                    val nomenclature = nomenclatureResponse.data.map { it.toNomenclature() }
-                    emit(ApiResult.success(nomenclature))
+                val nomenclature = response.body()
+                if (nomenclature != null) {
+                    nomenclatureDao.deleteAllNomenclature() // Очищаем старые данные
+                    nomenclatureDao.insertNomenclature(nomenclature) // Вставляем новые
+                    Result.success(Unit)
                 } else {
-                    emit(ApiResult.error("Ошибка получения данных: ${nomenclatureResponse?.message}"))
+                    Result.failure(IOException("Empty response body from server"))
                 }
             } else {
-                emit(ApiResult.error("Ошибка сервера: ${response.code()} ${response.message()}"))
+                Result.failure(IOException("Failed to fetch nomenclature: ${response.code()} - ${response.errorBody()?.string()}"))
             }
         } catch (e: Exception) {
-            emit(ApiResult.error("Ошибка сети: ${e.message}"))
+            Result.failure(e)
         }
     }
-    
-    suspend fun searchNomenclature(query: String): Flow<ApiResult<List<Nomenclature>>> = flow {
-        try {
-            emit(ApiResult.loading())
-            
-            val response = apiService.searchNomenclature(query)
-            
-            if (response.isSuccessful) {
-                val nomenclatureResponse = response.body()
-                if (nomenclatureResponse?.success == true) {
-                    val nomenclature = nomenclatureResponse.data.map { it.toNomenclature() }
-                    emit(ApiResult.success(nomenclature))
-                } else {
-                    emit(ApiResult.error("Ошибка поиска: ${nomenclatureResponse?.message}"))
-                }
-            } else {
-                emit(ApiResult.error("Ошибка сервера: ${response.code()} ${response.message()}"))
-            }
-        } catch (e: Exception) {
-            emit(ApiResult.error("Ошибка сети: ${e.message}"))
-        }
+
+    suspend fun getLocalNomenclatureCount(): Int {
+        return nomenclatureDao.getNomenclatureCount()
+    }
+
+    suspend fun getNomenclatureCountByCategory(categoryId: Int): Int {
+        return nomenclatureDao.getNomenclatureCountByCategory(categoryId)
+    }
+
+    suspend fun getLastSyncTime(): String? {
+        return nomenclatureDao.getLastUpdateTime()
     }
 }
-
-// Класс для обработки результатов API
-sealed class ApiResult<out T> {
-    data class Success<out T>(val data: T) : ApiResult<T>()
-    data class Error(val message: String) : ApiResult<Nothing>()
-    object Loading : ApiResult<Nothing>()
-    
-    companion object {
-        fun <T> success(data: T): ApiResult<T> = Success(data)
-        fun <T> error(message: String): ApiResult<T> = Error(message)
-        fun <T> loading(): ApiResult<T> = Loading
-    }
-}
-
-// Функции-расширения для удобства
-fun <T> ApiResult<T>.isSuccess(): Boolean = this is ApiResult.Success
-fun <T> ApiResult<T>.isError(): Boolean = this is ApiResult.Error
-fun <T> ApiResult<T>.isLoading(): Boolean = this is ApiResult.Loading
-
-fun <T> ApiResult<T>.getData(): T? = if (this is ApiResult.Success) this.data else null
-fun <T> ApiResult<T>.getError(): String? = if (this is ApiResult.Error) this.message else null

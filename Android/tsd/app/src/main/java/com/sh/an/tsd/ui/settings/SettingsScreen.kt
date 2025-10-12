@@ -20,7 +20,9 @@ fun SettingsScreen(
     onLoadDirectoriesClick: (() -> Unit)? = null,
     isLoadingDirectories: Boolean = false,
     directoriesError: String? = null,
-    onClearDirectoriesError: (() -> Unit)? = null
+    syncProgress: String = "",
+    onClearDirectoriesError: (() -> Unit)? = null,
+    onClearProgress: (() -> Unit)? = null
 ) {
     LazyColumn(
         modifier = Modifier
@@ -30,14 +32,16 @@ fun SettingsScreen(
     ) {
         // Кнопка загрузки справочников
         if (onLoadDirectoriesClick != null) {
-            item {
-                LoadDirectoriesButton(
-                    onLoadClick = onLoadDirectoriesClick,
-                    isLoading = isLoadingDirectories,
-                    errorMessage = directoriesError,
-                    onClearError = onClearDirectoriesError
-                )
-            }
+                item {
+                    LoadDirectoriesButton(
+                        onLoadClick = onLoadDirectoriesClick,
+                        isLoading = isLoadingDirectories,
+                        errorMessage = directoriesError,
+                        syncProgress = syncProgress,
+                        onClearError = onClearDirectoriesError,
+                        onClearProgress = onClearProgress
+                    )
+                }
         }
         
         items(getSettingsItems()) { item ->
@@ -192,7 +196,9 @@ fun LoadDirectoriesButton(
     onLoadClick: () -> Unit,
     isLoading: Boolean,
     errorMessage: String?,
-    onClearError: (() -> Unit)?
+    syncProgress: String = "",
+    onClearError: (() -> Unit)?,
+    onClearProgress: (() -> Unit)?
 ) {
     Column(
         modifier = Modifier
@@ -238,32 +244,71 @@ fun LoadDirectoriesButton(
             }
         }
 
-        // Кнопка загрузки справочников
-        Button(
-            onClick = onLoadClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            enabled = !isLoading
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    color = MaterialTheme.colorScheme.onPrimary
+            // Прогресс синхронизации
+            if (syncProgress.isNotEmpty()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Filled.Sync,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = syncProgress,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            fontSize = 14.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                        if (onClearProgress != null) {
+                            IconButton(onClick = onClearProgress) {
+                                Icon(
+                                    Icons.Filled.Close,
+                                    contentDescription = "Закрити",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Кнопка загрузки справочников
+            Button(
+                onClick = onLoadClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                enabled = !isLoading
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Icon(
+                    Icons.Filled.Sync,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (isLoading) "Завантаження..." else "Завантажити довідники",
+                    fontSize = 16.sp
+                )
             }
-            Icon(
-                Icons.Filled.Sync,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = if (isLoading) "Завантаження..." else "Завантажити довідники",
-                fontSize = 16.sp
-            )
-        }
     }
 }
 

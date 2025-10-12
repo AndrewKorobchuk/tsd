@@ -14,9 +14,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.sh.an.tsd.data.manager.SettingsManager
 import com.sh.an.tsd.data.repository.AuthRepository
 import com.sh.an.tsd.data.repository.UnitsRepository
+import com.sh.an.tsd.data.repository.NomenclatureCategoriesRepository
+import com.sh.an.tsd.data.repository.NomenclatureRepository
 import com.sh.an.tsd.data.database.TsdDatabase
 import com.sh.an.tsd.ui.units.UnitsScreen
 import com.sh.an.tsd.ui.units.UnitsViewModel
+import com.sh.an.tsd.ui.directories.DirectoriesViewModel
+import com.sh.an.tsd.ui.nomenclature.NomenclatureCategoriesViewModel
+import com.sh.an.tsd.ui.nomenclature.NomenclatureItemsViewModel
 import com.sh.an.tsd.ui.login.LoginScreen
 import com.sh.an.tsd.ui.main.MainScreen
 import com.sh.an.tsd.ui.settings.ConnectionSettingsScreen
@@ -41,15 +46,40 @@ fun TsdApp() {
     val settingsManager = remember { SettingsManager(context) }
     val authRepository = remember { AuthRepository(settingsManager) }
     
-    // Инициализация базы данных и репозиториев
-    val database = remember { TsdDatabase.getDatabase(context) }
-    val unitsRepository = remember { 
-        UnitsRepository(
-            authRepository.createUnitsApiService(),
-            database.unitOfMeasureDao()
-        )
-    }
-    val unitsViewModel = remember { UnitsViewModel(unitsRepository) }
+        // Инициализация базы данных и репозиториев
+        val database = remember { TsdDatabase.getDatabase(context) }
+        val unitsRepository = remember { 
+            UnitsRepository(
+                authRepository.createUnitsApiService(),
+                database.unitOfMeasureDao()
+            )
+        }
+        val nomenclatureCategoriesRepository = remember {
+            NomenclatureCategoriesRepository(
+                authRepository.createNomenclatureCategoriesApiService(),
+                database.nomenclatureCategoryDao()
+            )
+        }
+        val nomenclatureRepository = remember {
+            NomenclatureRepository(
+                authRepository.createNomenclatureApiService(),
+                database.nomenclatureDao()
+            )
+        }
+        val unitsViewModel = remember { UnitsViewModel(unitsRepository) }
+        val directoriesViewModel = remember { 
+            DirectoriesViewModel(
+                unitsRepository,
+                nomenclatureCategoriesRepository,
+                nomenclatureRepository
+            )
+        }
+        val nomenclatureCategoriesViewModel = remember {
+            NomenclatureCategoriesViewModel(nomenclatureCategoriesRepository)
+        }
+        val nomenclatureItemsViewModel = remember {
+            NomenclatureItemsViewModel(nomenclatureRepository)
+        }
     
     var currentScreen by remember { mutableStateOf("login") }
     var isLoggedIn by remember { mutableStateOf(authRepository.isLoggedIn()) }
@@ -108,15 +138,18 @@ fun TsdApp() {
             }
         }
     } else {
-            // Главный экран после входа
-            MainScreen(
-                onLogoutClick = {
-                    authRepository.logout()
-                    isLoggedIn = false
-                },
-                unitsViewModel = unitsViewModel,
-                authRepository = authRepository
-            )
+                // Главный экран после входа
+                MainScreen(
+                    onLogoutClick = {
+                        authRepository.logout()
+                        isLoggedIn = false
+                    },
+                    unitsViewModel = unitsViewModel,
+                    directoriesViewModel = directoriesViewModel,
+                    nomenclatureCategoriesViewModel = nomenclatureCategoriesViewModel,
+                    nomenclatureItemsViewModel = nomenclatureItemsViewModel,
+                    authRepository = authRepository
+                )
     }
 }
 
