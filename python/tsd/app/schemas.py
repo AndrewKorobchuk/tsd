@@ -114,3 +114,67 @@ class UnitOfMeasure(UnitOfMeasureBase):
 
     class Config:
         from_attributes = True
+
+
+# Nomenclature Category Schemas
+class NomenclatureCategoryBase(BaseModel):
+    code: str
+    name: str
+    description: Optional[str] = None
+    is_active: bool = True
+
+
+class NomenclatureCategoryCreate(NomenclatureCategoryBase):
+    pass
+
+
+class NomenclatureCategoryUpdate(BaseModel):
+    code: Optional[str] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class NomenclatureCategory(NomenclatureCategoryBase):
+    id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+# Nomenclature Schemas
+class NomenclatureBase(BaseModel):
+    code: str
+    category_id: int
+    name: str
+    base_unit_id: int
+    description_ru: Optional[str] = None
+    description_ua: Optional[str] = None
+    is_active: bool = True
+
+
+class NomenclatureCreate(NomenclatureBase):
+    pass
+
+
+class NomenclatureUpdate(BaseModel):
+    code: Optional[str] = None
+    category_id: Optional[int] = None
+    name: Optional[str] = None
+    base_unit_id: Optional[int] = None
+    description_ru: Optional[str] = None
+    description_ua: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class Nomenclature(NomenclatureBase):
+    id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    category: Optional[NomenclatureCategory] = None
+    base_unit: Optional[UnitOfMeasure] = None
+
+    class Config:
+        from_attributes = True

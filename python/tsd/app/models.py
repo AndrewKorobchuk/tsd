@@ -59,3 +59,34 @@ class UnitOfMeasure(Base):
     is_active = Column(Boolean, default=True)  # Активна ли единица измерения
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class NomenclatureCategory(Base):
+    __tablename__ = "nomenclature_categories"
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String, unique=True, index=True, nullable=False)  # Код категории
+    name = Column(String, nullable=False)  # Название категории
+    description = Column(Text, nullable=True)  # Описание категории
+    is_active = Column(Boolean, default=True)  # Активна ли категория
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class Nomenclature(Base):
+    __tablename__ = "nomenclature"
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String, unique=True, index=True, nullable=False)  # Код номенклатуры
+    category_id = Column(Integer, ForeignKey("nomenclature_categories.id"), nullable=False)  # ID категории
+    name = Column(String, nullable=False)  # Наименование
+    base_unit_id = Column(Integer, ForeignKey("units_of_measure.id"), nullable=False)  # ID базовой единицы измерения
+    description_ru = Column(Text, nullable=True)  # Описание на русском
+    description_ua = Column(Text, nullable=True)  # Описание на украинском
+    is_active = Column(Boolean, default=True)  # Признак активности
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    category = relationship("NomenclatureCategory", backref="nomenclature_items")
+    base_unit = relationship("UnitOfMeasure", backref="nomenclature_items")

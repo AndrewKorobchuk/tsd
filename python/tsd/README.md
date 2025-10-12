@@ -74,6 +74,26 @@ uvicorn main:app --reload
 - `DELETE /api/v1/units/{id}` - Удаление единицы измерения (деактивация)
 - `PATCH /api/v1/units/{id}/activate` - Активация единицы измерения
 
+### Справочник категорий номенклатуры
+
+- `GET /api/v1/nomenclature-categories/` - Получение списка категорий номенклатуры
+- `GET /api/v1/nomenclature-categories/{id}` - Получение категории по ID
+- `GET /api/v1/nomenclature-categories/code/{code}` - Получение категории по коду
+- `POST /api/v1/nomenclature-categories/` - Создание новой категории
+- `PUT /api/v1/nomenclature-categories/{id}` - Обновление категории
+- `DELETE /api/v1/nomenclature-categories/{id}` - Удаление категории (деактивация)
+- `PATCH /api/v1/nomenclature-categories/{id}/activate` - Активация категории
+
+### Справочник номенклатуры
+
+- `GET /api/v1/nomenclature/` - Получение списка номенклатуры
+- `GET /api/v1/nomenclature/{id}` - Получение номенклатуры по ID
+- `GET /api/v1/nomenclature/code/{code}` - Получение номенклатуры по коду
+- `POST /api/v1/nomenclature/` - Создание новой номенклатуры
+- `PUT /api/v1/nomenclature/{id}` - Обновление номенклатуры
+- `DELETE /api/v1/nomenclature/{id}` - Удаление номенклатуры (деактивация)
+- `PATCH /api/v1/nomenclature/{id}/activate` - Активация номенклатуры
+
 ### Другие эндпоинты
 
 - `GET /` - Корневой эндпоинт с информацией об API
@@ -185,6 +205,67 @@ curl -X DELETE "http://localhost:8001/api/v1/units/1" \
      -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
+## Справочник категорий номенклатуры
+
+### 1. Получение списка категорий номенклатуры
+
+```bash
+curl -X GET "http://localhost:8001/api/v1/nomenclature-categories/" \
+     -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+### 2. Создание новой категории
+
+```bash
+curl -X POST "http://localhost:8001/api/v1/nomenclature-categories/" \
+     -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "code": "AUTO",
+       "name": "Автомобили",
+       "description": "Категория автомобилей и запчастей"
+     }'
+```
+
+## Справочник номенклатуры
+
+### 1. Получение списка номенклатуры
+
+```bash
+curl -X GET "http://localhost:8001/api/v1/nomenclature/" \
+     -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+### 2. Фильтрация номенклатуры по категории
+
+```bash
+curl -X GET "http://localhost:8001/api/v1/nomenclature/?category_id=1" \
+     -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+### 3. Поиск номенклатуры
+
+```bash
+curl -X GET "http://localhost:8001/api/v1/nomenclature/?search=хлеб" \
+     -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+### 4. Создание новой номенклатуры
+
+```bash
+curl -X POST "http://localhost:8001/api/v1/nomenclature/" \
+     -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "code": "BREAD_002",
+       "category_id": 1,
+       "name": "Хлеб черный",
+       "base_unit_id": 11,
+       "description_ru": "Черный хлеб из ржаной муки",
+       "description_ua": "Чорний хліб з житнього борошна"
+     }'
+```
+
 ### Структура данных единицы измерения
 
 ```json
@@ -200,6 +281,56 @@ curl -X DELETE "http://localhost:8001/api/v1/units/1" \
 }
 ```
 
+### Структура данных категории номенклатуры
+
+```json
+{
+  "id": 1,
+  "code": "FOOD",
+  "name": "Продукты питания",
+  "description": "Категория продуктов питания и напитков",
+  "is_active": true,
+  "created_at": "2025-10-12T18:59:20",
+  "updated_at": null
+}
+```
+
+### Структура данных номенклатуры
+
+```json
+{
+  "id": 1,
+  "code": "BREAD_001",
+  "category_id": 1,
+  "name": "Хлеб белый",
+  "base_unit_id": 11,
+  "description_ru": "Свежий белый хлеб",
+  "description_ua": "Свіжий білий хліб",
+  "is_active": true,
+  "created_at": "2025-10-12T18:59:20",
+  "updated_at": null,
+  "category": {
+    "id": 1,
+    "code": "FOOD",
+    "name": "Продукты питания",
+    "description": "Категория продуктов питания и напитков",
+    "is_active": true,
+    "created_at": "2025-10-12T18:59:20",
+    "updated_at": null
+  },
+  "base_unit": {
+    "id": 11,
+    "code": "pcs",
+    "name": "Штука",
+    "short_name": "шт",
+    "description": "Единица измерения количества",
+    "is_active": true,
+    "created_at": "2025-10-12T17:57:42",
+    "updated_at": null
+  }
+}
+```
+
 ### Параметры запросов
 
 - `skip` - количество записей для пропуска (по умолчанию: 0)
@@ -209,8 +340,9 @@ curl -X DELETE "http://localhost:8001/api/v1/units/1" \
 
 ### Тестовые данные
 
-В системе уже добавлены 20 единиц измерения:
+В системе уже добавлены:
 
+**Единицы измерения (20 шт):**
 - **Масса**: кг, г, т
 - **Объем**: л, мл, м³
 - **Длина**: м, см, мм
@@ -218,10 +350,29 @@ curl -X DELETE "http://localhost:8001/api/v1/units/1" \
 - **Количество**: шт, кор, уп, компл, пар, дюж
 - **Время**: ч, дн, мес, г
 
+**Категории номенклатуры (5 шт):**
+- FOOD - Продукты питания
+- CLOTHES - Одежда
+- ELECTRONICS - Электроника
+- BOOKS - Книги
+- HOUSEHOLD - Товары для дома
+
+**Номенклатура (6 шт):**
+- BREAD_001 - Хлеб белый (категория FOOD)
+- MILK_001 - Молоко 3.2% (категория FOOD)
+- SHIRT_001 - Рубашка мужская (категория CLOTHES)
+- PHONE_001 - Смартфон (категория ELECTRONICS)
+- BOOK_001 - Учебник математики (категория BOOKS)
+- SOAP_001 - Мыло туалетное (категория HOUSEHOLD)
+
 Для добавления тестовых данных выполните:
 
 ```bash
+# Единицы измерения
 docker-compose exec web python seed_units.py
+
+# Категории номенклатуры и номенклатура
+docker-compose exec web python seed_nomenclature.py
 ```
 
 ## Конфигурация
