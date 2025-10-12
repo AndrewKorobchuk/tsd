@@ -1,6 +1,7 @@
 package com.sh.an.tsd.data.repository
 
 import com.sh.an.tsd.data.api.AuthApiService
+import com.sh.an.tsd.data.api.UnitsApiService
 import com.sh.an.tsd.data.manager.SettingsManager
 import com.sh.an.tsd.data.model.*
 import retrofit2.Retrofit
@@ -145,6 +146,22 @@ class AuthRepository(private val settingsManager: SettingsManager) {
     
     fun getCurrentUserData(): Triple<Int, String, String> {
         return settingsManager.getUserData()
+    }
+    
+    fun createUnitsApiService(): UnitsApiService {
+        val settings = settingsManager.getConnectionSettings()
+        val baseUrl = settings.getFullUrl()
+        
+        val retrofit = Retrofit.Builder()
+            .baseUrl(baseUrl)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+        
+        return retrofit.create(UnitsApiService::class.java)
+    }
+    
+    fun getAccessToken(): String {
+        return settingsManager.getAccessToken()
     }
 }
 

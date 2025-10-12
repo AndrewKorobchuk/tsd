@@ -16,13 +16,30 @@ import androidx.compose.ui.unit.sp
 import com.sh.an.tsd.ui.theme.TsdTheme
 
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(
+    onLoadDirectoriesClick: (() -> Unit)? = null,
+    isLoadingDirectories: Boolean = false,
+    directoriesError: String? = null,
+    onClearDirectoriesError: (() -> Unit)? = null
+) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        // Кнопка загрузки справочников
+        if (onLoadDirectoriesClick != null) {
+            item {
+                LoadDirectoriesButton(
+                    onLoadClick = onLoadDirectoriesClick,
+                    isLoading = isLoadingDirectories,
+                    errorMessage = directoriesError,
+                    onClearError = onClearDirectoriesError
+                )
+            }
+        }
+        
         items(getSettingsItems()) { item ->
             SettingsItem(
                 item = item,
@@ -168,6 +185,86 @@ fun getSettingsItems(): List<SettingsItem> {
             icon = Icons.Filled.ExitToApp
         )
     )
+}
+
+@Composable
+fun LoadDirectoriesButton(
+    onLoadClick: () -> Unit,
+    isLoading: Boolean,
+    errorMessage: String?,
+    onClearError: (() -> Unit)?
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+    ) {
+        // Отображение ошибки
+        errorMessage?.let { error ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Filled.Error,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        fontSize = 14.sp,
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (onClearError != null) {
+                        IconButton(onClick = onClearError) {
+                            Icon(
+                                Icons.Filled.Close,
+                                contentDescription = "Закрити",
+                                tint = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Кнопка загрузки справочников
+        Button(
+            onClick = onLoadClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            enabled = !isLoading
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+            Icon(
+                Icons.Filled.Sync,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = if (isLoading) "Завантаження..." else "Завантажити довідники",
+                fontSize = 16.sp
+            )
+        }
+    }
 }
 
 @Preview(showBackground = true)

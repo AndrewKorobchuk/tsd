@@ -17,7 +17,9 @@ import com.sh.an.tsd.ui.theme.TsdTheme
 
 @Composable
 fun DirectoriesScreen(
-    onNomenclatureClick: () -> Unit = {}
+    onNomenclatureClick: () -> Unit = {},
+    onUnitsClick: () -> Unit = {},
+    unitsCount: Int = 0
 ) {
     var searchQuery by remember { mutableStateOf("") }
     
@@ -42,12 +44,13 @@ fun DirectoriesScreen(
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(getDirectories()) { directory ->
+            items(getDirectories(unitsCount)) { directory ->
                 DirectoryCard(
                     directory = directory,
                     onItemClick = { 
                         when (directory.id) {
                             "1" -> onNomenclatureClick() // Товари -> Номенклатура
+                            "4" -> onUnitsClick() // Одиниці виміру
                             else -> { /* TODO: Открыть другие справочники */ }
                         }
                     }
@@ -124,7 +127,7 @@ data class Directory(
     val itemCount: Int
 )
 
-fun getDirectories(): List<Directory> {
+fun getDirectories(unitsCount: Int = 0): List<Directory> {
     return listOf(
         Directory(
             id = "1",
@@ -152,7 +155,7 @@ fun getDirectories(): List<Directory> {
             name = "Одиниці виміру",
             description = "Справочник единиц измерения",
             icon = Icons.Filled.Straighten,
-            itemCount = 25
+            itemCount = unitsCount
         ),
         Directory(
             id = "5",
