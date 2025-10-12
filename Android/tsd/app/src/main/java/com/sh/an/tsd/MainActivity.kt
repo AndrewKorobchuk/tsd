@@ -16,12 +16,14 @@ import com.sh.an.tsd.data.repository.AuthRepository
 import com.sh.an.tsd.data.repository.UnitsRepository
 import com.sh.an.tsd.data.repository.NomenclatureCategoriesRepository
 import com.sh.an.tsd.data.repository.NomenclatureRepository
+import com.sh.an.tsd.data.repository.WarehousesRepository
 import com.sh.an.tsd.data.database.TsdDatabase
 import com.sh.an.tsd.ui.units.UnitsScreen
 import com.sh.an.tsd.ui.units.UnitsViewModel
 import com.sh.an.tsd.ui.directories.DirectoriesViewModel
 import com.sh.an.tsd.ui.nomenclature.NomenclatureCategoriesViewModel
 import com.sh.an.tsd.ui.nomenclature.NomenclatureItemsViewModel
+import com.sh.an.tsd.ui.warehouses.WarehousesViewModel
 import com.sh.an.tsd.ui.login.LoginScreen
 import com.sh.an.tsd.ui.main.MainScreen
 import com.sh.an.tsd.ui.settings.ConnectionSettingsScreen
@@ -66,12 +68,19 @@ fun TsdApp() {
                 database.nomenclatureDao()
             )
         }
+        val warehousesRepository = remember {
+            WarehousesRepository(
+                authRepository.createWarehousesApiService(),
+                database.warehouseDao()
+            )
+        }
         val unitsViewModel = remember { UnitsViewModel(unitsRepository) }
         val directoriesViewModel = remember { 
             DirectoriesViewModel(
                 unitsRepository,
                 nomenclatureCategoriesRepository,
-                nomenclatureRepository
+                nomenclatureRepository,
+                warehousesRepository
             )
         }
         val nomenclatureCategoriesViewModel = remember {
@@ -79,6 +88,9 @@ fun TsdApp() {
         }
         val nomenclatureItemsViewModel = remember {
             NomenclatureItemsViewModel(nomenclatureRepository)
+        }
+        val warehousesViewModel = remember {
+            WarehousesViewModel(warehousesRepository)
         }
     
     var currentScreen by remember { mutableStateOf("login") }
@@ -148,6 +160,7 @@ fun TsdApp() {
                     directoriesViewModel = directoriesViewModel,
                     nomenclatureCategoriesViewModel = nomenclatureCategoriesViewModel,
                     nomenclatureItemsViewModel = nomenclatureItemsViewModel,
+                    warehousesViewModel = warehousesViewModel,
                     authRepository = authRepository
                 )
     }

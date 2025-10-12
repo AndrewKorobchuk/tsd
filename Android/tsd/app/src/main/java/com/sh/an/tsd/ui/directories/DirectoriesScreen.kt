@@ -19,9 +19,11 @@ import com.sh.an.tsd.ui.theme.TsdTheme
 fun DirectoriesScreen(
     onNomenclatureClick: () -> Unit = {},
     onUnitsClick: () -> Unit = {},
+    onWarehousesClick: () -> Unit = {},
     unitsCount: Int = 0,
     categoriesCount: Int = 0,
-    nomenclatureCount: Int = 0
+    nomenclatureCount: Int = 0,
+    warehousesCount: Int = 0
 ) {
     var searchQuery by remember { mutableStateOf("") }
     
@@ -46,13 +48,15 @@ fun DirectoriesScreen(
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(getDirectories(unitsCount, categoriesCount, nomenclatureCount)) { directory ->
+            items(getDirectories(unitsCount, categoriesCount, nomenclatureCount, warehousesCount)) { directory ->
                 DirectoryCard(
                     directory = directory,
                     onItemClick = { 
                         when (directory.id) {
                             "1" -> onNomenclatureClick() // Товари -> Номенклатура
+                            "3" -> onWarehousesClick() // Склади -> Склады
                             "4" -> onUnitsClick() // Одиниці виміру
+                            "5" -> onNomenclatureClick() // Категорії товарів -> Номенклатура
                             else -> { /* TODO: Открыть другие справочники */ }
                         }
                     }
@@ -129,7 +133,7 @@ data class Directory(
     val itemCount: Int
 )
 
-fun getDirectories(unitsCount: Int = 0, categoriesCount: Int = 0, nomenclatureCount: Int = 0): List<Directory> {
+fun getDirectories(unitsCount: Int = 0, categoriesCount: Int = 0, nomenclatureCount: Int = 0, warehousesCount: Int = 0): List<Directory> {
     return listOf(
         Directory(
             id = "1",
@@ -150,7 +154,7 @@ fun getDirectories(unitsCount: Int = 0, categoriesCount: Int = 0, nomenclatureCo
             name = "Склади",
             description = "Справочник складов и мест хранения",
             icon = Icons.Filled.Store,
-            itemCount = 15
+            itemCount = warehousesCount
         ),
         Directory(
             id = "4",

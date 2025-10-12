@@ -90,3 +90,16 @@ class Nomenclature(Base):
     # Relationships
     category = relationship("NomenclatureCategory", backref="nomenclature_items")
     base_unit = relationship("UnitOfMeasure", backref="nomenclature_items")
+
+
+class Warehouse(Base):
+    __tablename__ = "warehouses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String, unique=True, index=True, nullable=False)  # Код склада
+    name = Column(String, nullable=False)  # Название склада
+    address = Column(Text, nullable=True)  # Адрес склада
+    description = Column(Text, nullable=True)  # Описание склада
+    is_active = Column(Boolean, default=True)  # Признак активности
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())

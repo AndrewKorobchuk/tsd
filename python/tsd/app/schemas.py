@@ -178,3 +178,33 @@ class Nomenclature(NomenclatureBase):
 
     class Config:
         from_attributes = True
+
+
+# Warehouse Schemas
+class WarehouseBase(BaseModel):
+    code: str
+    name: str
+    address: Optional[str] = None
+    description: Optional[str] = None
+    is_active: bool = True
+
+
+class WarehouseCreate(WarehouseBase):
+    pass
+
+
+class WarehouseUpdate(BaseModel):
+    code: Optional[str] = None
+    name: Optional[str] = None
+    address: Optional[str] = None
+    description: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class Warehouse(WarehouseBase):
+    id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True

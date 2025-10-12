@@ -5,13 +5,15 @@ import androidx.lifecycle.viewModelScope
 import com.sh.an.tsd.data.repository.UnitsRepository
 import com.sh.an.tsd.data.repository.NomenclatureCategoriesRepository
 import com.sh.an.tsd.data.repository.NomenclatureRepository
+import com.sh.an.tsd.data.repository.WarehousesRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class DirectoriesViewModel(
     private val unitsRepository: UnitsRepository,
     private val nomenclatureCategoriesRepository: NomenclatureCategoriesRepository,
-    private val nomenclatureRepository: NomenclatureRepository
+    private val nomenclatureRepository: NomenclatureRepository,
+    private val warehousesRepository: WarehousesRepository
 ) : ViewModel() {
 
     private val _isLoading = MutableStateFlow(false)
@@ -31,6 +33,9 @@ class DirectoriesViewModel(
 
     private val _nomenclatureCount = MutableStateFlow(0)
     val nomenclatureCount: StateFlow<Int> = _nomenclatureCount.asStateFlow()
+
+    private val _warehousesCount = MutableStateFlow(0)
+    val warehousesCount: StateFlow<Int> = _warehousesCount.asStateFlow()
 
     init {
         loadLocalCounts()
@@ -67,6 +72,14 @@ class DirectoriesViewModel(
                     return@launch
                 }
 
+                // Синхронизируем склады
+                _syncProgress.value = "Загружаем склады..."
+                val warehousesResult = warehousesRepository.syncWarehousesFromServer(token)
+                if (warehousesResult.isFailure) {
+                    _errorMessage.value = "Ошибка загрузки складов: ${warehousesResult.exceptionOrNull()?.message}"
+                    return@launch
+                }
+
                 _syncProgress.value = "Синхронизация завершена успешно!"
                 loadLocalCounts()
                 
@@ -83,6 +96,7 @@ class DirectoriesViewModel(
             _unitsCount.value = unitsRepository.getLocalUnitsCount()
             _categoriesCount.value = nomenclatureCategoriesRepository.getLocalCategoriesCount()
             _nomenclatureCount.value = nomenclatureRepository.getLocalNomenclatureCount()
+            _warehousesCount.value = warehousesRepository.getLocalWarehousesCount()
         }
     }
 

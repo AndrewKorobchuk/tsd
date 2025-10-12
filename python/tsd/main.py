@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine
 from app.models import Base
-from app.routers import oauth, units, nomenclature_categories, nomenclature
+from app.routers import oauth, units, nomenclature_categories, nomenclature, warehouses
 
 # Создание таблиц в базе данных
 Base.metadata.create_all(bind=engine)
@@ -27,6 +27,7 @@ app.include_router(oauth.router, prefix="/api/v1")
 app.include_router(units.router, prefix="/api/v1")
 app.include_router(nomenclature_categories.router, prefix="/api/v1")
 app.include_router(nomenclature.router, prefix="/api/v1")
+app.include_router(warehouses.router, prefix="/api/v1")
 
 
 @app.get("/")
@@ -60,15 +61,24 @@ async def root():
             "delete_category": "/api/v1/nomenclature-categories/{id}",
             "activate_category": "/api/v1/nomenclature-categories/{id}/activate"
         },
-        "nomenclature_endpoints": {
-            "list_nomenclature": "/api/v1/nomenclature/",
-            "get_nomenclature": "/api/v1/nomenclature/{id}",
-            "get_nomenclature_by_code": "/api/v1/nomenclature/code/{code}",
-            "create_nomenclature": "/api/v1/nomenclature/",
-            "update_nomenclature": "/api/v1/nomenclature/{id}",
-            "delete_nomenclature": "/api/v1/nomenclature/{id}",
-            "activate_nomenclature": "/api/v1/nomenclature/{id}/activate"
-        }
+            "nomenclature_endpoints": {
+                "list_nomenclature": "/api/v1/nomenclature/",
+                "get_nomenclature": "/api/v1/nomenclature/{id}",
+                "get_nomenclature_by_code": "/api/v1/nomenclature/code/{code}",
+                "create_nomenclature": "/api/v1/nomenclature/",
+                "update_nomenclature": "/api/v1/nomenclature/{id}",
+                "delete_nomenclature": "/api/v1/nomenclature/{id}",
+                "activate_nomenclature": "/api/v1/nomenclature/{id}/activate"
+            },
+            "warehouses_endpoints": {
+                "list_warehouses": "/api/v1/warehouses/",
+                "get_warehouse": "/api/v1/warehouses/{id}",
+                "get_warehouse_by_code": "/api/v1/warehouses/code/{code}",
+                "create_warehouse": "/api/v1/warehouses/",
+                "update_warehouse": "/api/v1/warehouses/{id}",
+                "delete_warehouse": "/api/v1/warehouses/{id}",
+                "activate_warehouse": "/api/v1/warehouses/{id}/activate"
+            }
     }
 
 

@@ -4,6 +4,7 @@ import com.sh.an.tsd.data.api.AuthApiService
 import com.sh.an.tsd.data.api.UnitsApiService
 import com.sh.an.tsd.data.api.NomenclatureCategoriesApiService
 import com.sh.an.tsd.data.api.NomenclatureApiService
+import com.sh.an.tsd.data.api.WarehousesApiService
 import com.sh.an.tsd.data.manager.SettingsManager
 import com.sh.an.tsd.data.model.*
 import retrofit2.Retrofit
@@ -188,6 +189,18 @@ class AuthRepository(private val settingsManager: SettingsManager) {
                 .build()
             
             return retrofit.create(NomenclatureApiService::class.java)
+        }
+        
+        fun createWarehousesApiService(): WarehousesApiService {
+            val settings = settingsManager.getConnectionSettings()
+            val baseUrl = settings.getFullUrl()
+            
+            val retrofit = Retrofit.Builder()
+                .baseUrl(baseUrl)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+            
+            return retrofit.create(WarehousesApiService::class.java)
         }
 }
 

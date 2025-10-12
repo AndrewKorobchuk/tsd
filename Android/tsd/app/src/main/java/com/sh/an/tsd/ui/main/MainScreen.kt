@@ -20,6 +20,7 @@ import com.sh.an.tsd.ui.units.UnitsViewModel
 import com.sh.an.tsd.ui.directories.DirectoriesViewModel
 import com.sh.an.tsd.ui.nomenclature.NomenclatureCategoriesViewModel
 import com.sh.an.tsd.ui.nomenclature.NomenclatureItemsViewModel
+import com.sh.an.tsd.ui.warehouses.WarehousesViewModel
 import com.sh.an.tsd.data.repository.AuthRepository
 import com.sh.an.tsd.ui.theme.TsdTheme
 import androidx.compose.runtime.collectAsState
@@ -34,6 +35,7 @@ fun MainScreen(
     directoriesViewModel: DirectoriesViewModel? = null,
     nomenclatureCategoriesViewModel: NomenclatureCategoriesViewModel? = null,
     nomenclatureItemsViewModel: NomenclatureItemsViewModel? = null,
+    warehousesViewModel: WarehousesViewModel? = null,
     authRepository: AuthRepository? = null
 ) {
     var selectedTab by remember { mutableStateOf(0) }
@@ -101,21 +103,26 @@ fun MainScreen(
                                     val unitsCount by directoriesViewModel.unitsCount.collectAsState()
                                     val categoriesCount by directoriesViewModel.categoriesCount.collectAsState()
                                     val nomenclatureCount by directoriesViewModel.nomenclatureCount.collectAsState()
+                                    val warehousesCount by directoriesViewModel.warehousesCount.collectAsState()
                                     
                                     DirectoriesScreen(
                                         onNomenclatureClick = { currentScreen = "nomenclature_categories" },
                                         onUnitsClick = { currentScreen = "units" },
+                                        onWarehousesClick = { currentScreen = "warehouses" },
                                         unitsCount = unitsCount,
                                         categoriesCount = categoriesCount,
-                                        nomenclatureCount = nomenclatureCount
+                                        nomenclatureCount = nomenclatureCount,
+                                        warehousesCount = warehousesCount
                                     )
                                 } else {
                                     DirectoriesScreen(
                                         onNomenclatureClick = { currentScreen = "nomenclature_categories" },
                                         onUnitsClick = { currentScreen = "units" },
+                                        onWarehousesClick = { currentScreen = "warehouses" },
                                         unitsCount = 0,
                                         categoriesCount = 0,
-                                        nomenclatureCount = 0
+                                        nomenclatureCount = 0,
+                                        warehousesCount = 0
                                     )
                                 }
                             }
@@ -146,6 +153,37 @@ fun MainScreen(
                             }
                         }
                     }
+                "warehouses" -> {
+                    if (warehousesViewModel != null) {
+                        val warehouses by warehousesViewModel.warehouses.collectAsState()
+                        val isLoading by warehousesViewModel.isLoading.collectAsState()
+                        val errorMessage by warehousesViewModel.errorMessage.collectAsState()
+                        
+                        com.sh.an.tsd.ui.warehouses.WarehousesScreen(
+                            warehouses = warehouses,
+                            isLoading = isLoading,
+                            errorMessage = errorMessage,
+                            onBackClick = { currentScreen = "main" },
+                            onWarehouseClick = { /* TODO: Открыть детали склада */ },
+                            onSearchQueryChange = { query ->
+                                warehousesViewModel.searchWarehouses(query)
+                            },
+                            onClearError = {
+                                warehousesViewModel.clearError()
+                            }
+                        )
+                    } else {
+                        com.sh.an.tsd.ui.warehouses.WarehousesScreen(
+                            warehouses = emptyList(),
+                            isLoading = false,
+                            errorMessage = null,
+                            onBackClick = { currentScreen = "main" },
+                            onWarehouseClick = { /* TODO: Открыть детали склада */ },
+                            onSearchQueryChange = {},
+                            onClearError = {}
+                        )
+                    }
+                }
                 "nomenclature_categories" -> {
                     if (nomenclatureCategoriesViewModel != null) {
                         val categories by nomenclatureCategoriesViewModel.categories.collectAsState()
