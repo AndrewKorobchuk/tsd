@@ -64,6 +64,16 @@ uvicorn main:app --reload
 - `GET /api/v1/oauth/me` - Получение информации о текущем пользователе
 - `GET /api/v1/oauth/client-info` - Получение информации о текущем клиенте
 
+### Справочник единиц измерения
+
+- `GET /api/v1/units/` - Получение списка единиц измерения
+- `GET /api/v1/units/{id}` - Получение единицы измерения по ID
+- `GET /api/v1/units/code/{code}` - Получение единицы измерения по коду
+- `POST /api/v1/units/` - Создание новой единицы измерения
+- `PUT /api/v1/units/{id}` - Обновление единицы измерения
+- `DELETE /api/v1/units/{id}` - Удаление единицы измерения (деактивация)
+- `PATCH /api/v1/units/{id}/activate` - Активация единицы измерения
+
 ### Другие эндпоинты
 
 - `GET /` - Корневой эндпоинт с информацией об API
@@ -117,6 +127,101 @@ curl -X POST "http://localhost:8001/api/v1/oauth/token" \
 ```bash
 curl -X GET "http://localhost:8001/api/v1/oauth/me" \
      -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+## Справочник единиц измерения
+
+### 1. Получение списка единиц измерения
+
+```bash
+curl -X GET "http://localhost:8001/api/v1/units/" \
+     -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+### 2. Поиск единиц измерения
+
+```bash
+curl -X GET "http://localhost:8001/api/v1/units/?search=кг" \
+     -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+### 3. Получение единицы измерения по коду
+
+```bash
+curl -X GET "http://localhost:8001/api/v1/units/code/kg" \
+     -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+### 4. Создание новой единицы измерения
+
+```bash
+curl -X POST "http://localhost:8001/api/v1/units/" \
+     -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "code": "lb",
+       "name": "Фунт",
+       "short_name": "фунт",
+       "description": "Единица измерения массы"
+     }'
+```
+
+### 5. Обновление единицы измерения
+
+```bash
+curl -X PUT "http://localhost:8001/api/v1/units/1" \
+     -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "name": "Килограмм (обновлено)",
+       "description": "Обновленное описание"
+     }'
+```
+
+### 6. Деактивация единицы измерения
+
+```bash
+curl -X DELETE "http://localhost:8001/api/v1/units/1" \
+     -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+### Структура данных единицы измерения
+
+```json
+{
+  "id": 1,
+  "code": "kg",
+  "name": "Килограмм",
+  "short_name": "кг",
+  "description": "Основная единица измерения массы в системе СИ",
+  "is_active": true,
+  "created_at": "2025-10-12T17:57:42",
+  "updated_at": null
+}
+```
+
+### Параметры запросов
+
+- `skip` - количество записей для пропуска (по умолчанию: 0)
+- `limit` - максимальное количество записей (по умолчанию: 100, максимум: 1000)
+- `active_only` - показывать только активные единицы измерения (по умолчанию: true)
+- `search` - поиск по названию, коду или краткому названию
+
+### Тестовые данные
+
+В системе уже добавлены 20 единиц измерения:
+
+- **Масса**: кг, г, т
+- **Объем**: л, мл, м³
+- **Длина**: м, см, мм
+- **Площадь**: м²
+- **Количество**: шт, кор, уп, компл, пар, дюж
+- **Время**: ч, дн, мес, г
+
+Для добавления тестовых данных выполните:
+
+```bash
+docker-compose exec web python seed_units.py
 ```
 
 ## Конфигурация

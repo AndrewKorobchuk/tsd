@@ -46,3 +46,16 @@ class OAuthToken(Base):
     # Relationships
     client = relationship("OAuthClient", backref="tokens")
     user = relationship("User", backref="tokens")
+
+
+class UnitOfMeasure(Base):
+    __tablename__ = "units_of_measure"
+
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String, unique=True, index=True, nullable=False)  # Код единицы измерения
+    name = Column(String, nullable=False)  # Название единицы измерения
+    short_name = Column(String, nullable=False)  # Краткое название
+    description = Column(Text, nullable=True)  # Описание
+    is_active = Column(Boolean, default=True)  # Активна ли единица измерения
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())

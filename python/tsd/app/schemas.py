@@ -84,3 +84,33 @@ class TokenData(BaseModel):
     username: Optional[str] = None
     client_id: Optional[str] = None
     scope: Optional[str] = None
+
+
+# Unit of Measure Schemas
+class UnitOfMeasureBase(BaseModel):
+    code: str
+    name: str
+    short_name: str
+    description: Optional[str] = None
+    is_active: bool = True
+
+
+class UnitOfMeasureCreate(UnitOfMeasureBase):
+    pass
+
+
+class UnitOfMeasureUpdate(BaseModel):
+    code: Optional[str] = None
+    name: Optional[str] = None
+    short_name: Optional[str] = None
+    description: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class UnitOfMeasure(UnitOfMeasureBase):
+    id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
