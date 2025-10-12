@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine
 from app.models import Base
-from app.routers import oauth, units, nomenclature_categories, nomenclature, warehouses
+from app.routers import oauth, units, nomenclature_categories, nomenclature, warehouses, stocks, documents, inventories, barcodes
 
 # Создание таблиц в базе данных
 Base.metadata.create_all(bind=engine)
@@ -28,6 +28,10 @@ app.include_router(units.router, prefix="/api/v1")
 app.include_router(nomenclature_categories.router, prefix="/api/v1")
 app.include_router(nomenclature.router, prefix="/api/v1")
 app.include_router(warehouses.router, prefix="/api/v1")
+app.include_router(stocks.router, prefix="/api/v1")
+app.include_router(documents.router, prefix="/api/v1")
+app.include_router(inventories.router, prefix="/api/v1")
+app.include_router(barcodes.router, prefix="/api/v1")
 
 
 @app.get("/")
@@ -78,6 +82,50 @@ async def root():
                 "update_warehouse": "/api/v1/warehouses/{id}",
                 "delete_warehouse": "/api/v1/warehouses/{id}",
                 "activate_warehouse": "/api/v1/warehouses/{id}/activate"
+            },
+            "stocks_endpoints": {
+                "list_stocks": "/api/v1/stocks/",
+                "get_stocks_summary": "/api/v1/stocks/summary",
+                "get_stock": "/api/v1/stocks/{id}",
+                "get_stock_by_nomenclature_and_warehouse": "/api/v1/stocks/nomenclature/{nomenclature_id}/warehouse/{warehouse_id}",
+                "create_stock": "/api/v1/stocks/",
+                "update_stock": "/api/v1/stocks/{id}",
+                "delete_stock": "/api/v1/stocks/{id}"
+            },
+            "documents_endpoints": {
+                "list_documents": "/api/v1/documents/",
+                "get_document": "/api/v1/documents/{id}",
+                "create_document": "/api/v1/documents/",
+                "update_document": "/api/v1/documents/{id}",
+                "delete_document": "/api/v1/documents/{id}",
+                "post_document": "/api/v1/documents/{id}/post",
+                "cancel_document": "/api/v1/documents/{id}/cancel",
+                "create_document_item": "/api/v1/documents/{document_id}/items",
+                "update_document_item": "/api/v1/documents/items/{item_id}",
+                "delete_document_item": "/api/v1/documents/items/{item_id}"
+            },
+            "inventories_endpoints": {
+                "list_inventories": "/api/v1/inventories/",
+                "get_inventory": "/api/v1/inventories/{id}",
+                "create_inventory": "/api/v1/inventories/",
+                "update_inventory": "/api/v1/inventories/{id}",
+                "delete_inventory": "/api/v1/inventories/{id}",
+                "complete_inventory": "/api/v1/inventories/{id}/complete",
+                "cancel_inventory": "/api/v1/inventories/{id}/cancel",
+                "create_inventory_item": "/api/v1/inventories/{inventory_id}/items",
+                "update_inventory_item": "/api/v1/inventories/items/{item_id}",
+                "delete_inventory_item": "/api/v1/inventories/items/{item_id}"
+            },
+            "barcodes_endpoints": {
+                "list_barcodes": "/api/v1/barcodes/",
+                "get_barcode": "/api/v1/barcodes/{id}",
+                "scan_barcode": "/api/v1/barcodes/scan/{barcode_value}",
+                "create_barcode": "/api/v1/barcodes/",
+                "update_barcode": "/api/v1/barcodes/{id}",
+                "delete_barcode": "/api/v1/barcodes/{id}",
+                "activate_barcode": "/api/v1/barcodes/{id}/activate",
+                "deactivate_barcode": "/api/v1/barcodes/{id}/deactivate",
+                "set_primary_barcode": "/api/v1/barcodes/{id}/set-primary"
             }
     }
 

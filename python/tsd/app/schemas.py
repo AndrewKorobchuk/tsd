@@ -2,6 +2,8 @@ import json
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
+from decimal import Decimal
+from app.models import DocumentType, DocumentStatus, MovementType, InventoryStatus
 
 
 class UserBase(BaseModel):
@@ -208,3 +210,269 @@ class Warehouse(WarehouseBase):
 
     class Config:
         from_attributes = True
+
+
+# Stock Schemas
+class StockBase(BaseModel):
+    nomenclature_id: int
+    warehouse_id: int
+    quantity: Decimal
+    reserved_quantity: Decimal = Decimal('0')
+
+
+class StockCreate(StockBase):
+    pass
+
+
+class StockUpdate(BaseModel):
+    quantity: Optional[Decimal] = None
+    reserved_quantity: Optional[Decimal] = None
+
+
+class Stock(StockBase):
+    id: int
+    last_updated: datetime
+    created_at: datetime
+    nomenclature: Optional[Nomenclature] = None
+    warehouse: Optional[Warehouse] = None
+
+    class Config:
+        from_attributes = True
+
+
+# Document Schemas
+class DocumentBase(BaseModel):
+    document_type: DocumentType
+    document_number: str
+    warehouse_id: int
+    date: datetime
+    status: DocumentStatus = DocumentStatus.DRAFT
+    description: Optional[str] = None
+
+
+class DocumentCreate(DocumentBase):
+    pass
+
+
+class DocumentUpdate(BaseModel):
+    document_type: Optional[DocumentType] = None
+    document_number: Optional[str] = None
+    warehouse_id: Optional[int] = None
+    date: Optional[datetime] = None
+    status: Optional[DocumentStatus] = None
+    description: Optional[str] = None
+
+
+class Document(DocumentBase):
+    id: int
+    created_by: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    warehouse: Optional[Warehouse] = None
+    creator: Optional[User] = None
+    items: List['DocumentItem'] = []
+
+    class Config:
+        from_attributes = True
+
+
+# DocumentItem Schemas
+class DocumentItemBase(BaseModel):
+    nomenclature_id: int
+    quantity: Decimal
+    unit_id: int
+    price: Optional[Decimal] = None
+    total: Optional[Decimal] = None
+    description: Optional[str] = None
+
+
+class DocumentItemCreate(DocumentItemBase):
+    pass
+
+
+class DocumentItemUpdate(BaseModel):
+    nomenclature_id: Optional[int] = None
+    quantity: Optional[Decimal] = None
+    unit_id: Optional[int] = None
+    price: Optional[Decimal] = None
+    total: Optional[Decimal] = None
+    description: Optional[str] = None
+
+
+class DocumentItem(DocumentItemBase):
+    id: int
+    document_id: int
+    created_at: datetime
+    nomenclature: Optional[Nomenclature] = None
+    unit: Optional[UnitOfMeasure] = None
+
+    class Config:
+        from_attributes = True
+
+
+# Inventory Schemas
+class InventoryBase(BaseModel):
+    warehouse_id: int
+    inventory_number: str
+    date_start: datetime
+    date_end: Optional[datetime] = None
+    status: InventoryStatus = InventoryStatus.IN_PROGRESS
+    description: Optional[str] = None
+
+
+class InventoryCreate(InventoryBase):
+    pass
+
+
+class InventoryUpdate(BaseModel):
+    warehouse_id: Optional[int] = None
+    inventory_number: Optional[str] = None
+    date_start: Optional[datetime] = None
+    date_end: Optional[datetime] = None
+    status: Optional[InventoryStatus] = None
+    description: Optional[str] = None
+
+
+class Inventory(InventoryBase):
+    id: int
+    created_by: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    warehouse: Optional[Warehouse] = None
+    creator: Optional[User] = None
+    items: List['InventoryItem'] = []
+
+    class Config:
+        from_attributes = True
+
+
+# InventoryItem Schemas
+class InventoryItemBase(BaseModel):
+    nomenclature_id: int
+    planned_quantity: Decimal
+    actual_quantity: Optional[Decimal] = None
+    difference: Optional[Decimal] = None
+    unit_id: int
+
+
+class InventoryItemCreate(InventoryItemBase):
+    pass
+
+
+class InventoryItemUpdate(BaseModel):
+    nomenclature_id: Optional[int] = None
+    planned_quantity: Optional[Decimal] = None
+    actual_quantity: Optional[Decimal] = None
+    difference: Optional[Decimal] = None
+    unit_id: Optional[int] = None
+
+
+class InventoryItem(InventoryItemBase):
+    id: int
+    inventory_id: int
+    counted_by: Optional[int] = None
+    counted_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    nomenclature: Optional[Nomenclature] = None
+    unit: Optional[UnitOfMeasure] = None
+    counter: Optional[User] = None
+
+    class Config:
+        from_attributes = True
+
+
+# StockMovement Schemas
+class StockMovementBase(BaseModel):
+    nomenclature_id: int
+    warehouse_id: int
+    movement_type: MovementType
+    quantity: Decimal
+    document_id: Optional[int] = None
+    inventory_id: Optional[int] = None
+    date: datetime
+    description: Optional[str] = None
+
+
+class StockMovementCreate(StockMovementBase):
+    pass
+
+
+class StockMovement(StockMovementBase):
+    id: int
+    user_id: int
+    created_at: datetime
+    nomenclature: Optional[Nomenclature] = None
+    warehouse: Optional[Warehouse] = None
+    document: Optional[Document] = None
+    inventory: Optional[Inventory] = None
+    user: Optional[User] = None
+
+    class Config:
+        from_attributes = True
+
+
+# Дополнительные схемы для API
+class DocumentWithItems(Document):
+    items: List[DocumentItem] = []
+
+
+class InventoryWithItems(Inventory):
+    items: List[InventoryItem] = []
+
+
+class StockSummary(BaseModel):
+    nomenclature_id: int
+    nomenclature_code: str
+    nomenclature_name: str
+    warehouse_id: int
+    warehouse_code: str
+    warehouse_name: str
+    quantity: Decimal
+    reserved_quantity: Decimal
+    available_quantity: Decimal
+    last_updated: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# Barcode Schemas
+class BarcodeBase(BaseModel):
+    nomenclature_id: int
+    barcode: str
+    barcode_type: str = "EAN13"
+    is_primary: bool = False
+    is_active: bool = True
+    description: Optional[str] = None
+
+
+class BarcodeCreate(BarcodeBase):
+    pass
+
+
+class BarcodeUpdate(BaseModel):
+    nomenclature_id: Optional[int] = None
+    barcode: Optional[str] = None
+    barcode_type: Optional[str] = None
+    is_primary: Optional[bool] = None
+    is_active: Optional[bool] = None
+    description: Optional[str] = None
+
+
+class Barcode(BarcodeBase):
+    id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    nomenclature: Optional[Nomenclature] = None
+
+    class Config:
+        from_attributes = True
+
+
+# Обновляем ссылки на модели
+Document.model_rebuild()
+DocumentItem.model_rebuild()
+Inventory.model_rebuild()
+InventoryItem.model_rebuild()
+StockMovement.model_rebuild()
