@@ -8,7 +8,50 @@ import android.widget.Toast
 object MapsUtils {
     
     /**
-     * Открывает Google Maps с указанным адресом
+     * Отправляет адрес в Android для обработки - Android сам решает, что с ним делать
+     * @param context Контекст приложения
+     * @param address Адрес для обработки
+     */
+    fun shareAddress(context: Context, address: String) {
+        try {
+            // Создаем Intent для обработки адреса - Android покажет диалог выбора приложения
+            val addressIntent = Intent(Intent.ACTION_VIEW).apply {
+                data = Uri.parse("geo:0,0?q=${Uri.encode(address)}")
+                // Не указываем конкретный пакет - пусть Android сам решает
+            }
+            
+            context.startActivity(addressIntent)
+        } catch (e: Exception) {
+            Toast.makeText(context, "Ошибка обработки адреса", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    /**
+     * Отправляет адрес как текст для обработки различными приложениями
+     * @param context Контекст приложения
+     * @param address Адрес для обработки
+     */
+    private fun shareAddressAsText(context: Context, address: String) {
+        try {
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, address)
+                putExtra(Intent.EXTRA_SUBJECT, "Адрес склада")
+            }
+            
+            val chooserIntent = Intent.createChooser(shareIntent, "Выберите приложение для обработки адреса")
+            if (chooserIntent.resolveActivity(context.packageManager) != null) {
+                context.startActivity(chooserIntent)
+            } else {
+                Toast.makeText(context, "Нет доступных приложений для обработки адреса", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Toast.makeText(context, "Ошибка отправки адреса", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    /**
+     * Открывает Google Maps с указанным адресом (старый метод для обратной совместимости)
      * @param context Контекст приложения
      * @param address Адрес для поиска на карте
      */

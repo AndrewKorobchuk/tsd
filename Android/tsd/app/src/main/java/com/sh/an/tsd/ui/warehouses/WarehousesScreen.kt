@@ -237,7 +237,7 @@ fun WarehouseCard(
                 Spacer(modifier = Modifier.height(4.dp))
                 ClickableAddress(
                     address = address,
-                    onAddressClick = { MapsUtils.openGoogleMaps(context, address) }
+                    onAddressClick = { MapsUtils.shareAddress(context, address) }
                 )
             }
             
@@ -264,7 +264,7 @@ fun ClickableAddress(
     ) {
         Icon(
             imageVector = Icons.Filled.LocationOn,
-            contentDescription = "Открыть в картах",
+            contentDescription = "Открыть адрес",
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(16.dp)
         )
@@ -278,7 +278,7 @@ fun ClickableAddress(
         Spacer(modifier = Modifier.width(4.dp))
         Icon(
             imageVector = Icons.Filled.OpenInNew,
-            contentDescription = "Открыть в картах",
+            contentDescription = "Открыть адрес",
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(14.dp)
         )
