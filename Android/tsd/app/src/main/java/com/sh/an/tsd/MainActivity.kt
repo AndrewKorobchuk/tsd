@@ -9,11 +9,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import com.sh.an.tsd.data.manager.SettingsManager
+import com.sh.an.tsd.data.repository.AuthRepository
 import com.sh.an.tsd.ui.login.LoginScreen
 import com.sh.an.tsd.ui.main.MainScreen
 import com.sh.an.tsd.ui.settings.ConnectionSettingsScreen
 import com.sh.an.tsd.ui.theme.TsdTheme
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,8 +33,16 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun TsdApp() {
+    val context = LocalContext.current
+    val settingsManager = remember { SettingsManager(context) }
+    val authRepository = remember { AuthRepository(settingsManager) }
+    
     var currentScreen by remember { mutableStateOf("login") }
-    var isLoggedIn by remember { mutableStateOf(false) }
+    var isLoggedIn by remember { mutableStateOf(authRepository.isLoggedIn()) }
+    var loginError by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
+    
+    val coroutineScope = rememberCoroutineScope()
     
     if (!isLoggedIn) {
         // Экран входа
@@ -38,31 +50,57 @@ fun TsdApp() {
             "login" -> {
                 LoginScreen(
                     onLoginClick = { username, password ->
-                        // Заглушка логина - считаем что залогинились
-                        println("Login attempt: $username")
-                        isLoggedIn = true
+                        coroutineScope.launch {
+                            isLoading = true
+                            loginError = null
+                            
+                            val result = authRepository.login(username, password)
+                            result.fold(
+                                onSuccess = { user ->
+                                    isLoggedIn = true
+                                    println("Login successful: ${user.username}")
+                                },
+                                onFailure = { error ->
+                                    loginError = error.message ?: "Ошибка авторизации"
+                                    println("Login failed: ${error.message}")
+                                }
+                            )
+                            isLoading = false
+                        }
                     },
                     onSettingsClick = {
                         currentScreen = "settings"
-                    }
+                    },
+                    isLoading = isLoading,
+                    errorMessage = loginError
                 )
             }
             "settings" -> {
+                val currentSettings = settingsManager.getConnectionSettings()
                 ConnectionSettingsScreen(
                     onBackClick = {
                         currentScreen = "login"
                     },
                     onSaveClick = { serverUrl, port, apiKey ->
-                        // TODO: Сохранить настройки подключения
-                        println("Settings saved: $serverUrl:$port")
+                        val settings = com.sh.an.tsd.data.model.ConnectionSettings(serverUrl, port, apiKey)
+                        settingsManager.saveConnectionSettings(settings)
+                        println("Settings saved: ${settings.getFullUrl()}")
                         currentScreen = "login"
-                    }
+                    },
+                    initialServerUrl = currentSettings.serverUrl,
+                    initialPort = currentSettings.port,
+                    initialApiKey = currentSettings.apiKey
                 )
             }
         }
     } else {
         // Главный экран после входа
-        MainScreen()
+        MainScreen(
+            onLogoutClick = {
+                authRepository.logout()
+                isLoggedIn = false
+            }
+        )
     }
 }
 

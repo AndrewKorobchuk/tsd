@@ -19,7 +19,9 @@ import com.sh.an.tsd.ui.theme.TsdTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen() {
+fun MainScreen(
+    onLogoutClick: () -> Unit = {}
+) {
     var selectedTab by remember { mutableStateOf(0) }
     var currentScreen by remember { mutableStateOf("main") }
     var currentCategoryId by remember { mutableStateOf("") }
@@ -40,6 +42,15 @@ fun MainScreen() {
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
+                },
+                actions = {
+                    IconButton(onClick = onLogoutClick) {
+                        Icon(
+                            Icons.Filled.ExitToApp,
+                            contentDescription = "Выйти",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,

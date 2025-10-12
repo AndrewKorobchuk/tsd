@@ -18,11 +18,14 @@ import com.sh.an.tsd.ui.theme.TsdTheme
 @Composable
 fun ConnectionSettingsScreen(
     onBackClick: () -> Unit = {},
-    onSaveClick: (String, String, String) -> Unit = { _, _, _ -> }
+    onSaveClick: (String, String, String) -> Unit = { _, _, _ -> },
+    initialServerUrl: String = "",
+    initialPort: String = "",
+    initialApiKey: String = ""
 ) {
-    var serverUrl by remember { mutableStateOf("") }
-    var port by remember { mutableStateOf("") }
-    var apiKey by remember { mutableStateOf("") }
+    var serverUrl by remember { mutableStateOf(initialServerUrl) }
+    var port by remember { mutableStateOf(initialPort) }
+    var apiKey by remember { mutableStateOf(initialApiKey) }
     var isLoading by remember { mutableStateOf(false) }
 
     Column(
@@ -56,7 +59,7 @@ fun ConnectionSettingsScreen(
             value = serverUrl,
             onValueChange = { serverUrl = it },
             label = { Text("URL сервера") },
-            placeholder = { Text("https://example.com") },
+            placeholder = { Text("http://localhost") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
             modifier = Modifier
@@ -70,7 +73,7 @@ fun ConnectionSettingsScreen(
             value = port,
             onValueChange = { port = it },
             label = { Text("Порт") },
-            placeholder = { Text("8080") },
+            placeholder = { Text("8001") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier
@@ -139,7 +142,7 @@ fun ConnectionSettingsScreen(
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 Text(
-                    text = "Укажите адрес сервера для подключения к системе. Порт и API ключ являются необязательными параметрами.",
+                    text = "Укажите адрес сервера для подключения к системе. По умолчанию используется localhost:8001 для локального сервера.",
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 20.sp

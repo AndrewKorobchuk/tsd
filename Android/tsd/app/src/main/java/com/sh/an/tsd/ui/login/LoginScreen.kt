@@ -20,11 +20,12 @@ import com.sh.an.tsd.ui.theme.TsdTheme
 @Composable
 fun LoginScreen(
     onLoginClick: (String, String) -> Unit = { _, _ -> },
-    onSettingsClick: () -> Unit = {}
+    onSettingsClick: () -> Unit = {},
+    isLoading: Boolean = false,
+    errorMessage: String? = null
 ) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -50,6 +51,25 @@ fun LoginScreen(
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(bottom = 32.dp)
         )
+
+        // Отображение ошибки
+        errorMessage?.let { error ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Text(
+                    text = error,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.padding(16.dp),
+                    fontSize = 14.sp
+                )
+            }
+        }
 
         // Поле логина
         OutlinedTextField(
@@ -82,7 +102,6 @@ fun LoginScreen(
         Button(
             onClick = {
                 if (username.isNotBlank() && password.isNotBlank()) {
-                    isLoading = true
                     onLoginClick(username, password)
                 }
             },
