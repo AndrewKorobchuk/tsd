@@ -15,6 +15,9 @@ data class ConnectionSettings(
     
     fun getFullUrl(): String {
         val baseUrl = getBaseUrl()
+        if (baseUrl.isBlank()) {
+            return "" // Возвращаем пустую строку, если настройки не заданы
+        }
         return if (baseUrl.startsWith("http://") || baseUrl.startsWith("https://")) {
             baseUrl
         } else {

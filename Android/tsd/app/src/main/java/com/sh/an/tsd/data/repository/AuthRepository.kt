@@ -6,6 +6,7 @@ import com.sh.an.tsd.data.api.NomenclatureCategoriesApiService
 import com.sh.an.tsd.data.api.NomenclatureApiService
 import com.sh.an.tsd.data.api.WarehousesApiService
 import com.sh.an.tsd.data.manager.SettingsManager
+import com.sh.an.tsd.data.factory.ApiServiceFactory
 import com.sh.an.tsd.data.model.*
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -13,38 +14,15 @@ import java.io.IOException
 
 class AuthRepository(private val settingsManager: SettingsManager) {
     
-    private var authApiService: AuthApiService? = null
+    private val apiServiceFactory = ApiServiceFactory(settingsManager)
     
     private fun getAuthApiService(): AuthApiService {
-        if (authApiService == null) {
-            val settings = settingsManager.getConnectionSettings()
-            val baseUrl = settings.getFullUrl()
-            
-            val retrofit = Retrofit.Builder()
-                .baseUrl(baseUrl)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
-            
-            authApiService = retrofit.create(AuthApiService::class.java)
-        }
-        return authApiService!!
+        return apiServiceFactory.createAuthApiService()
     }
     
-    private fun updateApiService() {
-        val settings = settingsManager.getConnectionSettings()
-        val baseUrl = settings.getFullUrl()
-        
-        val retrofit = Retrofit.Builder()
-            .baseUrl(baseUrl)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-        
-        authApiService = retrofit.create(AuthApiService::class.java)
-    }
     
     suspend fun registerOAuthClient(): Result<OAuthClientResponse> {
         return try {
-            updateApiService()
             val clientData = OAuthClientCreate(
                 clientName = "TSD Mobile App",
                 redirectUris = listOf("http://localhost:3000/callback"),
@@ -66,8 +44,6 @@ class AuthRepository(private val settingsManager: SettingsManager) {
     
     suspend fun login(username: String, password: String): Result<User> {
         return try {
-            updateApiService()
-            
             // Проверяем, есть ли OAuth клиент
             val clientId = settingsManager.getOAuthClientId()
             val clientSecret = settingsManager.getOAuthClientSecret()
@@ -139,9 +115,9 @@ class AuthRepository(private val settingsManager: SettingsManager) {
         }
     }
     
-    fun logout() {
-        settingsManager.logout()
-    }
+        fun logout() {
+            settingsManager.clearAuthData()
+        }
     
     fun isLoggedIn(): Boolean {
         return settingsManager.isLoggedIn()
@@ -151,56 +127,29 @@ class AuthRepository(private val settingsManager: SettingsManager) {
         return settingsManager.getUserData()
     }
     
-    fun createUnitsApiService(): UnitsApiService {
-        val settings = settingsManager.getConnectionSettings()
-        val baseUrl = settings.getFullUrl()
-        
-        val retrofit = Retrofit.Builder()
-            .baseUrl(baseUrl)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-        
-        return retrofit.create(UnitsApiService::class.java)
-    }
+        fun createUnitsApiService(): UnitsApiService {
+            return apiServiceFactory.createUnitsApiService()
+        }
     
         fun getAccessToken(): String {
             return settingsManager.getAccessToken()
         }
         
         fun createNomenclatureCategoriesApiService(): NomenclatureCategoriesApiService {
-            val settings = settingsManager.getConnectionSettings()
-            val baseUrl = settings.getFullUrl()
-            
-            val retrofit = Retrofit.Builder()
-                .baseUrl(baseUrl)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
-            
-            return retrofit.create(NomenclatureCategoriesApiService::class.java)
+            return apiServiceFactory.createNomenclatureCategoriesApiService()
         }
         
         fun createNomenclatureApiService(): NomenclatureApiService {
-            val settings = settingsManager.getConnectionSettings()
-            val baseUrl = settings.getFullUrl()
-            
-            val retrofit = Retrofit.Builder()
-                .baseUrl(baseUrl)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
-            
-            return retrofit.create(NomenclatureApiService::class.java)
+            return apiServiceFactory.createNomenclatureApiService()
         }
         
         fun createWarehousesApiService(): WarehousesApiService {
-            val settings = settingsManager.getConnectionSettings()
-            val baseUrl = settings.getFullUrl()
-            
-            val retrofit = Retrofit.Builder()
-                .baseUrl(baseUrl)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
-            
-            return retrofit.create(WarehousesApiService::class.java)
+            return apiServiceFactory.createWarehousesApiService()
+        }
+        
+        // Метод для сброса API сервисов при изменении настроек
+        fun resetApiServices() {
+            apiServiceFactory.reset()
         }
 }
 

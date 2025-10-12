@@ -34,9 +34,14 @@ class SettingsManager(context: Context) {
     }
     
     fun getConnectionSettings(): ConnectionSettings {
+        val serverUrl = prefs.getString(KEY_SERVER_URL, null)
+        val port = prefs.getString(KEY_PORT, null)
+        
+        // Если настройки не сохранены, возвращаем пустые значения
+        // Это заставит пользователя настроить подключение
         return ConnectionSettings(
-            serverUrl = prefs.getString(KEY_SERVER_URL, "") ?: "",
-            port = prefs.getString(KEY_PORT, "") ?: "",
+            serverUrl = serverUrl ?: "",
+            port = port ?: "",
             apiKey = prefs.getString(KEY_API_KEY, "") ?: ""
         )
     }
@@ -55,6 +60,25 @@ class SettingsManager(context: Context) {
     
     fun getOAuthClientSecret(): String {
         return prefs.getString(KEY_CLIENT_SECRET, "") ?: ""
+    }
+    
+    fun getOAuthClient(): OAuthClientResponse? {
+        val clientId = getOAuthClientId()
+        val clientSecret = getOAuthClientSecret()
+        return if (clientId.isNotEmpty() && clientSecret.isNotEmpty()) {
+            OAuthClientResponse(
+                id = 0, // ID не сохраняется, но нужен для совместимости
+                clientId = clientId,
+                clientSecret = clientSecret,
+                clientName = "TSD Mobile App",
+                redirectUris = listOf("http://localhost:8001/callback"),
+                scope = "read write",
+                isActive = true,
+                createdAt = ""
+            )
+        } else {
+            null
+        }
     }
     
     fun saveAuthData(accessToken: String, refreshToken: String?, expiresIn: Int) {
@@ -110,6 +134,21 @@ class SettingsManager(context: Context) {
             remove(KEY_USER_ID)
             remove(KEY_USERNAME)
             remove(KEY_USER_EMAIL)
+            putBoolean(KEY_IS_LOGGED_IN, false)
+            apply()
+        }
+    }
+    
+    fun clearAuthData() {
+        prefs.edit().apply {
+            remove(KEY_ACCESS_TOKEN)
+            remove(KEY_REFRESH_TOKEN)
+            remove(KEY_TOKEN_EXPIRES_AT)
+            remove(KEY_USER_ID)
+            remove(KEY_USERNAME)
+            remove(KEY_USER_EMAIL)
+            remove(KEY_CLIENT_ID)
+            remove(KEY_CLIENT_SECRET)
             putBoolean(KEY_IS_LOGGED_IN, false)
             apply()
         }

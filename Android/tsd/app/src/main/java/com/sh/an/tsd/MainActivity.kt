@@ -50,6 +50,7 @@ fun TsdApp() {
     
         // Инициализация базы данных и репозиториев
         val database = remember { TsdDatabase.getDatabase(context) }
+        // Создаем репозитории лениво, только когда они нужны
         val unitsRepository = remember { 
             UnitsRepository(
                 authRepository.createUnitsApiService(),
