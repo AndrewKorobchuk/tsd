@@ -47,6 +47,10 @@ class ApiServiceFactory(private val settingsManager: SettingsManager) {
         return retrofit.create(WarehousesApiService::class.java)
     }
     
+    fun createDocumentsApiService(): DocumentsApiService {
+        return retrofit.create(DocumentsApiService::class.java)
+    }
+    
     // Метод для сброса кэша retrofit (например, при изменении настроек)
     fun reset() {
         _retrofit = null

@@ -5,7 +5,7 @@ from sqlalchemy import and_
 from app.database import get_db
 from app.models import (
     Document, DocumentItem, Nomenclature, Warehouse, User, UnitOfMeasure,
-    DocumentType, DocumentStatus
+    DocumentType, DocumentStatus, Stock
 )
 from app.schemas import (
     Document as DocumentSchema,
@@ -230,10 +230,32 @@ async def post_document(
             detail="Нельзя провести документ без строк"
         )
     
-    # Здесь должна быть логика проведения документа
-    # (обновление остатков, создание движений и т.д.)
-    # Пока просто меняем статус
+    # Логика проведения документа в зависимости от типа
+    if document.document_type == DocumentType.STOCK_INPUT:
+        # Для документа "Ввод остатков" создаем или обновляем остатки
+        for item in document.items:
+            # Проверяем, существует ли уже остаток для данной номенклатуры и склада
+            existing_stock = db.query(Stock).filter(
+                and_(
+                    Stock.nomenclature_id == item.nomenclature_id,
+                    Stock.warehouse_id == document.warehouse_id
+                )
+            ).first()
+            
+            if existing_stock:
+                # Обновляем существующий остаток
+                existing_stock.quantity = item.quantity
+            else:
+                # Создаем новый остаток
+                new_stock = Stock(
+                    nomenclature_id=item.nomenclature_id,
+                    warehouse_id=document.warehouse_id,
+                    quantity=item.quantity,
+                    reserved_quantity=0.0
+                )
+                db.add(new_stock)
     
+    # Меняем статус документа на "Проведен"
     document.status = DocumentStatus.POSTED
     db.commit()
     
@@ -310,6 +332,20 @@ async def create_document_item(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Единица измерения не найдена"
         )
+    
+    # Для документа "Ввод остатков" проверяем, что номенклатура не дублируется
+    if document.document_type == DocumentType.STOCK_INPUT:
+        existing_item = db.query(DocumentItem).filter(
+            and_(
+                DocumentItem.document_id == document_id,
+                DocumentItem.nomenclature_id == item_data.nomenclature_id
+            )
+        ).first()
+        if existing_item:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Номенклатура уже добавлена в документ"
+            )
     
     # Создаем новую строку документа
     item = DocumentItem(

@@ -112,6 +112,7 @@ class DocumentType(str, enum.Enum):
     EXPENSE = "expense"  # Расход
     TRANSFER = "transfer"  # Перемещение
     INVENTORY = "inventory"  # Инвентаризация
+    STOCK_INPUT = "stock_input"  # Ввод остатков
 
 
 class DocumentStatus(str, enum.Enum):

@@ -17,6 +17,7 @@ import com.sh.an.tsd.data.repository.UnitsRepository
 import com.sh.an.tsd.data.repository.NomenclatureCategoriesRepository
 import com.sh.an.tsd.data.repository.NomenclatureRepository
 import com.sh.an.tsd.data.repository.WarehousesRepository
+import com.sh.an.tsd.data.repository.DocumentsRepository
 import com.sh.an.tsd.data.database.TsdDatabase
 import com.sh.an.tsd.ui.units.UnitsScreen
 import com.sh.an.tsd.ui.units.UnitsViewModel
@@ -24,6 +25,7 @@ import com.sh.an.tsd.ui.directories.DirectoriesViewModel
 import com.sh.an.tsd.ui.nomenclature.NomenclatureCategoriesViewModel
 import com.sh.an.tsd.ui.nomenclature.NomenclatureItemsViewModel
 import com.sh.an.tsd.ui.warehouses.WarehousesViewModel
+import com.sh.an.tsd.ui.documents.DocumentsViewModel
 import com.sh.an.tsd.ui.login.LoginScreen
 import com.sh.an.tsd.ui.main.MainScreen
 import com.sh.an.tsd.ui.settings.ConnectionSettingsScreen
@@ -75,6 +77,13 @@ fun TsdApp() {
                 database.warehouseDao()
             )
         }
+        val documentsRepository = remember {
+            DocumentsRepository(
+                authRepository.createDocumentsApiService(),
+                database.documentDao(),
+                database.documentItemDao()
+            )
+        }
         val unitsViewModel = remember { UnitsViewModel(unitsRepository) }
         val directoriesViewModel = remember { 
             DirectoriesViewModel(
@@ -92,6 +101,9 @@ fun TsdApp() {
         }
         val warehousesViewModel = remember {
             WarehousesViewModel(warehousesRepository)
+        }
+        val documentsViewModel = remember {
+            DocumentsViewModel(documentsRepository)
         }
     
     var currentScreen by remember { mutableStateOf("login") }
@@ -162,6 +174,7 @@ fun TsdApp() {
                     nomenclatureCategoriesViewModel = nomenclatureCategoriesViewModel,
                     nomenclatureItemsViewModel = nomenclatureItemsViewModel,
                     warehousesViewModel = warehousesViewModel,
+                    documentsViewModel = documentsViewModel,
                     authRepository = authRepository
                 )
     }

@@ -9,245 +9,360 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.sh.an.tsd.ui.theme.TsdTheme
+import com.sh.an.tsd.data.model.Document
+import com.sh.an.tsd.data.model.DocumentType
+import com.sh.an.tsd.data.model.DocumentStatus
+import java.text.SimpleDateFormat
+import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DocumentsScreen() {
-    var searchQuery by remember { mutableStateOf("") }
-    
+fun DocumentsScreen(
+    documents: List<Document>,
+    isLoading: Boolean,
+    errorMessage: String?,
+    selectedDocumentType: DocumentType?,
+    selectedStatus: DocumentStatus?,
+    onDocumentClick: (Document) -> Unit,
+    onFilterByType: (DocumentType?) -> Unit,
+    onFilterByStatus: (DocumentStatus?) -> Unit,
+    onSyncClick: () -> Unit,
+    onClearFilters: () -> Unit,
+    onClearError: () -> Unit,
+    onBackClick: () -> Unit
+) {
+    var showTypeFilter by remember { mutableStateOf(false) }
+    var showStatusFilter by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Поиск
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            label = { Text("Поиск документов") },
-            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "Поиск") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp),
-            singleLine = true
-        )
-        
-        // Список типов документов
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(getDocumentTypes()) { documentType ->
-                DocumentTypeCard(
-                    documentType = documentType,
-                    onItemClick = { /* TODO: Открыть тип документа */ }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun DocumentTypeCard(
-    documentType: DocumentType,
-    onItemClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(120.dp),
-        onClick = onItemClick,
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
+        // Заголовок
         Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(20.dp),
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Иконка
-            Card(
-                modifier = Modifier.size(64.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = documentType.color.copy(alpha = 0.1f)
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
+            Text(
+                text = "Документи",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold
+            )
+            
+            Row {
+                IconButton(onClick = { showTypeFilter = true }) {
                     Icon(
-                        imageVector = documentType.icon,
-                        contentDescription = documentType.title,
-                        tint = documentType.color,
-                        modifier = Modifier.size(32.dp)
+                        Icons.Filled.FilterList,
+                        contentDescription = "Фільтр по типу",
+                        tint = if (selectedDocumentType != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                
+                IconButton(onClick = { showStatusFilter = true }) {
+                    Icon(
+                        Icons.Filled.FilterAlt,
+                        contentDescription = "Фільтр по статусу",
+                        tint = if (selectedStatus != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                
+                IconButton(onClick = onSyncClick) {
+                    Icon(
+                        Icons.Filled.Sync,
+                        contentDescription = "Синхронізація"
                     )
                 }
             }
-            
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            // Текстовая информация
-            Column(
-                modifier = Modifier.weight(1f)
+        }
+
+        // Показать ошибку
+        errorMessage?.let { error ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(onClick = onClearError) {
+                        Icon(
+                            Icons.Filled.Close,
+                            contentDescription = "Закрити",
+                            tint = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                }
+            }
+        }
+
+        // Активные фильтры
+        if (selectedDocumentType != null || selectedStatus != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = documentType.title,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
-                Text(
-                    text = documentType.description,
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 18.sp
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Text(
-                    text = "Документів: ${documentType.documentCount}",
-                    fontSize = 12.sp,
-                    color = documentType.color,
+                    text = "Активні фільтри:",
                     fontWeight = FontWeight.Medium
                 )
+                TextButton(onClick = onClearFilters) {
+                    Text("Очистити")
+                }
+            }
+        }
+
+        // Список документов
+        if (isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else if (documents.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        Icons.Filled.Description,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Документи не знайдені",
+                        fontSize = 18.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Натисніть кнопку синхронізації для завантаження",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = onSyncClick
+                    ) {
+                        Icon(Icons.Filled.Sync, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Завантажити документи")
+                    }
+                }
+            }
+        } else {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(documents) { document ->
+                    DocumentCard(
+                        document = document,
+                        onClick = { onDocumentClick(document) }
+                    )
+                }
+            }
+        }
+    }
+
+    // Диалог фильтра по типу документа
+    if (showTypeFilter) {
+        AlertDialog(
+            onDismissRequest = { showTypeFilter = false },
+            title = { Text("Фільтр по типу документа") },
+            text = {
+                Column {
+                    TextButton(
+                        onClick = {
+                            onFilterByType(null)
+                            showTypeFilter = false
+                        }
+                    ) {
+                        Text("Всі типи")
+                    }
+                    DocumentType.values().forEach { type ->
+                        TextButton(
+                            onClick = {
+                                onFilterByType(type)
+                                showTypeFilter = false
+                            }
+                        ) {
+                            Text(getDocumentTypeDisplayName(type))
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showTypeFilter = false }) {
+                    Text("Скасувати")
+                }
+            }
+        )
+    }
+
+    // Диалог фильтра по статусу
+    if (showStatusFilter) {
+        AlertDialog(
+            onDismissRequest = { showStatusFilter = false },
+            title = { Text("Фільтр по статусу") },
+            text = {
+                Column {
+                    TextButton(
+                        onClick = {
+                            onFilterByStatus(null)
+                            showStatusFilter = false
+                        }
+                    ) {
+                        Text("Всі статуси")
+                    }
+                    DocumentStatus.values().forEach { status ->
+                        TextButton(
+                            onClick = {
+                                onFilterByStatus(status)
+                                showStatusFilter = false
+                            }
+                        ) {
+                            Text(getDocumentStatusDisplayName(status))
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showStatusFilter = false }) {
+                    Text("Скасувати")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun DocumentCard(
+    document: Document,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = document.documentNumber,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                StatusChip(status = document.status)
             }
             
-            // Стрелка
-            Icon(
-                imageVector = Icons.Filled.ChevronRight,
-                contentDescription = "Открыть",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp)
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            Text(
+                text = getDocumentTypeDisplayName(DocumentType.fromString(document.documentType)),
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            Text(
+                text = formatDate(document.date),
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            
+            document.description?.let { description ->
+                if (description.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = description,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2
+                    )
+                }
+            }
         }
     }
 }
 
-data class DocumentType(
-    val id: String,
-    val title: String,
-    val description: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector,
-    val color: androidx.compose.ui.graphics.Color,
-    val documentCount: Int
-)
-
-data class Document(
-    val id: String,
-    val number: String,
-    val description: String,
-    val date: String,
-    val status: DocumentStatus
-)
-
-enum class DocumentStatus(val displayName: String) {
-    NEW("Новый"),
-    IN_PROGRESS("В работе"),
-    COMPLETED("Завершен")
-}
-
-fun getDocumentTypes(): List<DocumentType> {
-    return listOf(
-        DocumentType(
-            id = "1",
-            title = "Інвентаризація",
-            description = "Проведення інвентаризації товарів на складі",
-            icon = Icons.Filled.Inventory,
-            color = androidx.compose.ui.graphics.Color(0xFF2196F3),
-            documentCount = 5
-        ),
-        DocumentType(
-            id = "2",
-            title = "Прихідні накладні",
-            description = "Документи приходу товарів на склад",
-            icon = Icons.Filled.Input,
-            color = androidx.compose.ui.graphics.Color(0xFF4CAF50),
-            documentCount = 12
-        ),
-        DocumentType(
-            id = "3",
-            title = "Видаткові накладні",
-            description = "Документи видачі товарів зі складу",
-            icon = Icons.Filled.Output,
-            color = androidx.compose.ui.graphics.Color(0xFFFF9800),
-            documentCount = 8
-        ),
-        DocumentType(
-            id = "4",
-            title = "Переміщення",
-            description = "Документи переміщення між складами",
-            icon = Icons.Filled.SwapHoriz,
-            color = androidx.compose.ui.graphics.Color(0xFF9C27B0),
-            documentCount = 3
-        ),
-        DocumentType(
-            id = "5",
-            title = "Списання",
-            description = "Документи списання товарів",
-            icon = Icons.Filled.Delete,
-            color = androidx.compose.ui.graphics.Color(0xFFF44336),
-            documentCount = 2
-        ),
-        DocumentType(
-            id = "6",
-            title = "Оприбуткування",
-            description = "Документи оприбуткування товарів",
-            icon = Icons.Filled.AddBox,
-            color = androidx.compose.ui.graphics.Color(0xFF00BCD4),
-            documentCount = 7
-        )
-    )
-}
-
-fun getSampleDocuments(): List<Document> {
-    return listOf(
-        Document(
-            id = "1",
-            number = "ПН-001",
-            description = "Приходная накладная от поставщика",
-            date = "15.01.2024",
-            status = DocumentStatus.NEW
-        ),
-        Document(
-            id = "2",
-            number = "РН-002",
-            description = "Расходная накладная на отгрузку",
-            date = "14.01.2024",
-            status = DocumentStatus.IN_PROGRESS
-        ),
-        Document(
-            id = "3",
-            number = "ПН-003",
-            description = "Приходная накладная на склад",
-            date = "13.01.2024",
-            status = DocumentStatus.COMPLETED
-        ),
-        Document(
-            id = "4",
-            number = "ИН-004",
-            description = "Инвентаризационная накладная",
-            date = "12.01.2024",
-            status = DocumentStatus.NEW
-        )
-    )
-}
-
-@Preview(showBackground = true)
 @Composable
-fun DocumentsScreenPreview() {
-    TsdTheme {
-        DocumentsScreen()
+fun StatusChip(status: String) {
+    val statusEnum = DocumentStatus.fromString(status)
+    val (backgroundColor, textColor) = when (statusEnum) {
+        DocumentStatus.DRAFT -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+        DocumentStatus.POSTED -> Color(0xFF4CAF50) to Color.White
+        DocumentStatus.CANCELLED -> Color(0xFFF44336) to Color.White
+    }
+    
+    Surface(
+        color = backgroundColor,
+        shape = MaterialTheme.shapes.small
+    ) {
+        Text(
+            text = getDocumentStatusDisplayName(statusEnum),
+            color = textColor,
+            fontSize = 12.sp,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        )
+    }
+}
+
+private fun getDocumentTypeDisplayName(type: DocumentType): String {
+    return when (type) {
+        DocumentType.RECEIPT -> "Приход"
+        DocumentType.EXPENSE -> "Расход"
+        DocumentType.TRANSFER -> "Перемещение"
+        DocumentType.INVENTORY -> "Инвентаризация"
+        DocumentType.STOCK_INPUT -> "Ввод остатков"
+    }
+}
+
+private fun getDocumentStatusDisplayName(status: DocumentStatus): String {
+    return when (status) {
+        DocumentStatus.DRAFT -> "Черновик"
+        DocumentStatus.POSTED -> "Проведен"
+        DocumentStatus.CANCELLED -> "Отменен"
+    }
+}
+
+private fun formatDate(dateString: String): String {
+    return try {
+        val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+        val outputFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
+        val date = inputFormat.parse(dateString)
+        outputFormat.format(date ?: Date())
+    } catch (e: Exception) {
+        dateString
     }
 }

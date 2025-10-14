@@ -13,6 +13,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sh.an.tsd.ui.documents.DocumentsScreen
+import com.sh.an.tsd.ui.documents.DocumentsViewModel
 import com.sh.an.tsd.ui.directories.DirectoriesScreen
 import com.sh.an.tsd.ui.settings.SettingsScreen
 import com.sh.an.tsd.ui.units.UnitsScreen
@@ -36,6 +37,7 @@ fun MainScreen(
     nomenclatureCategoriesViewModel: NomenclatureCategoriesViewModel? = null,
     nomenclatureItemsViewModel: NomenclatureItemsViewModel? = null,
     warehousesViewModel: WarehousesViewModel? = null,
+    documentsViewModel: DocumentsViewModel? = null,
     authRepository: AuthRepository? = null
 ) {
     var selectedTab by remember { mutableStateOf(0) }
@@ -97,7 +99,49 @@ fun MainScreen(
                 when (currentScreen) {
                     "main" -> {
                         when (selectedTab) {
-                            0 -> DocumentsScreen()
+                            0 -> {
+                                if (documentsViewModel != null) {
+                                    val documents by documentsViewModel.documents.collectAsState()
+                                    val isLoading by documentsViewModel.isLoading.collectAsState()
+                                    val errorMessage by documentsViewModel.errorMessage.collectAsState()
+                                    val selectedDocumentType by documentsViewModel.selectedDocumentType.collectAsState()
+                                    val selectedStatus by documentsViewModel.selectedStatus.collectAsState()
+                                    
+                                    DocumentsScreen(
+                                        documents = documents,
+                                        isLoading = isLoading,
+                                        errorMessage = errorMessage,
+                                        selectedDocumentType = selectedDocumentType,
+                                        selectedStatus = selectedStatus,
+                                        onDocumentClick = { /* TODO: Открыть детали документа */ },
+                                        onFilterByType = { documentsViewModel.filterByDocumentType(it) },
+                                        onFilterByStatus = { documentsViewModel.filterByStatus(it) },
+                                        onSyncClick = { 
+                                            authRepository?.let { auth ->
+                                                documentsViewModel.syncDocumentsFromServer("Bearer ${auth.getAccessToken()}")
+                                            }
+                                        },
+                                        onClearFilters = { documentsViewModel.clearFilters() },
+                                        onClearError = { documentsViewModel.clearError() },
+                                        onBackClick = { /* Не нужно для главного экрана */ }
+                                    )
+                                } else {
+                                    DocumentsScreen(
+                                        documents = emptyList(),
+                                        isLoading = false,
+                                        errorMessage = "DocumentsViewModel не инициализирован",
+                                        selectedDocumentType = null,
+                                        selectedStatus = null,
+                                        onDocumentClick = { },
+                                        onFilterByType = { },
+                                        onFilterByStatus = { },
+                                        onSyncClick = { },
+                                        onClearFilters = { },
+                                        onClearError = { },
+                                        onBackClick = { }
+                                    )
+                                }
+                            }
                             1 -> {
                                 if (directoriesViewModel != null) {
                                     val unitsCount by directoriesViewModel.unitsCount.collectAsState()
