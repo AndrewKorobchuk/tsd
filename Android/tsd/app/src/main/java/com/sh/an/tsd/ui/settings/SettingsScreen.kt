@@ -22,7 +22,10 @@ fun SettingsScreen(
     directoriesError: String? = null,
     syncProgress: String = "",
     onClearDirectoriesError: (() -> Unit)? = null,
-    onClearProgress: (() -> Unit)? = null
+    onClearProgress: (() -> Unit)? = null,
+    devicePrefix: String = "",
+    deviceName: String = "",
+    deviceModel: String = ""
 ) {
     LazyColumn(
         modifier = Modifier
@@ -30,6 +33,17 @@ fun SettingsScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        // Информация о ТСД устройстве
+        if (devicePrefix.isNotEmpty()) {
+            item {
+                DeviceInfoCard(
+                    devicePrefix = devicePrefix,
+                    deviceName = deviceName,
+                    deviceModel = deviceModel
+                )
+            }
+        }
+        
         // Кнопка загрузки справочников
         if (onLoadDirectoriesClick != null) {
                 item {
@@ -309,6 +323,114 @@ fun LoadDirectoriesButton(
                     fontSize = 16.sp
                 )
             }
+    }
+}
+
+@Composable
+fun DeviceInfoCard(
+    devicePrefix: String,
+    deviceName: String,
+    deviceModel: String
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Filled.PhoneAndroid,
+                    contentDescription = "ТСД устройство",
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "ТСД устройство",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            // Префикс устройства
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Префикс:",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.width(80.dp)
+                )
+                Text(
+                    text = devicePrefix,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // Название устройства
+            if (deviceName.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Устройство:",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.width(80.dp)
+                    )
+                    Text(
+                        text = deviceName,
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            
+            // Модель устройства
+            if (deviceModel.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Модель:",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.width(80.dp)
+                    )
+                    Text(
+                        text = deviceModel,
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+        }
     }
 }
 

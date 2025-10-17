@@ -18,6 +18,8 @@ import com.sh.an.tsd.data.repository.NomenclatureCategoriesRepository
 import com.sh.an.tsd.data.repository.NomenclatureRepository
 import com.sh.an.tsd.data.repository.WarehousesRepository
 import com.sh.an.tsd.data.repository.DocumentsRepository
+import com.sh.an.tsd.data.repository.TsdDeviceRepository
+import com.sh.an.tsd.data.repository.BarcodesRepository
 import com.sh.an.tsd.data.database.TsdDatabase
 import com.sh.an.tsd.ui.units.UnitsScreen
 import com.sh.an.tsd.ui.units.UnitsViewModel
@@ -51,6 +53,29 @@ fun TsdApp() {
     val context = LocalContext.current
     val settingsManager = remember { SettingsManager(context) }
     val authRepository = remember { AuthRepository(settingsManager) }
+    
+    // Инициализация ТСД устройства
+    val tsdDeviceRepository = remember { 
+        if (authRepository.hasConnectionSettings()) {
+            TsdDeviceRepository(context, settingsManager, authRepository.getApiServiceFactory())
+        } else null
+    }
+    
+    // Инициализация ТСД устройства при запуске
+    LaunchedEffect(Unit) {
+        if (tsdDeviceRepository != null && settingsManager.isLoggedIn()) {
+            try {
+                val result = tsdDeviceRepository.initializeDevice()
+                if (result.isSuccess) {
+                    println("ТСД устройство инициализировано с префиксом: ${result.getOrNull()}")
+                } else {
+                    println("Ошибка инициализации ТСД устройства: ${result.exceptionOrNull()?.message}")
+                }
+            } catch (e: Exception) {
+                println("Исключение при инициализации ТСД устройства: ${e.message}")
+            }
+        }
+    }
     
         // Инициализация базы данных и репозиториев
         val database = remember { TsdDatabase.getDatabase(context) }
@@ -96,6 +121,13 @@ fun TsdApp() {
                 )
             } else null
         }
+        val barcodesRepository = remember {
+            if (authRepository.hasConnectionSettings()) {
+                BarcodesRepository(
+                    authRepository.createBarcodesApiService()
+                )
+            } else null
+        }
         val unitsViewModel = remember { unitsRepository?.let { UnitsViewModel(it) } }
         val directoriesViewModel = remember { 
             if (unitsRepository != null && nomenclatureCategoriesRepository != null && 
@@ -125,12 +157,14 @@ fun TsdApp() {
         }
         val documentCreateViewModel = remember {
             if (documentsRepository != null && warehousesRepository != null && 
-                nomenclatureRepository != null && unitsRepository != null) {
+                nomenclatureRepository != null && unitsRepository != null && tsdDeviceRepository != null) {
                 DocumentCreateViewModel(
                     documentsRepository,
                     warehousesRepository,
                     nomenclatureRepository,
-                    unitsRepository
+                    unitsRepository,
+                    tsdDeviceRepository,
+                    settingsManager.getDevicePrefix()
                 )
             } else null
         }
@@ -208,7 +242,10 @@ fun TsdApp() {
                     documentsViewModel = documentsViewModel,
                     documentsMainViewModel = documentsMainViewModel,
                     documentCreateViewModel = documentCreateViewModel,
-                    authRepository = authRepository
+                    authRepository = authRepository,
+                    devicePrefix = settingsManager.getDevicePrefix(),
+                    deviceName = settingsManager.getDeviceName(),
+                    deviceModel = settingsManager.getDeviceModel()
                 )
     }
 }

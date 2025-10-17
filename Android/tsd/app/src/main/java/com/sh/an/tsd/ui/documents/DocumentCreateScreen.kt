@@ -136,13 +136,19 @@ fun DocumentCreateScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                // Номер документа
+                // Номер документа (только для чтения)
                 OutlinedTextField(
                     value = documentNumber,
-                    onValueChange = onDocumentNumberChange,
+                    onValueChange = { }, // Отключаем редактирование
                     label = { Text("Номер документа") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    readOnly = true, // Делаем поле только для чтения
+                    colors = OutlinedTextFieldDefaults.colors(
+                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                        disabledBorderColor = MaterialTheme.colorScheme.outline,
+                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 )
             }
             

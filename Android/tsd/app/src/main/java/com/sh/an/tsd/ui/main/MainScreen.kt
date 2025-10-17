@@ -18,6 +18,7 @@ import com.sh.an.tsd.ui.documents.DocumentsViewModel
 import com.sh.an.tsd.ui.documents.DocumentsMainScreen
 import com.sh.an.tsd.ui.documents.DocumentsMainViewModel
 import com.sh.an.tsd.ui.documents.DocumentCreateScreen
+import com.sh.an.tsd.ui.documents.AddItemScreen
 import com.sh.an.tsd.ui.documents.DocumentCreateViewModel
 import com.sh.an.tsd.ui.documents.DocumentItemAddScreen
 import com.sh.an.tsd.ui.directories.DirectoriesScreen
@@ -46,7 +47,10 @@ fun MainScreen(
     documentsViewModel: DocumentsViewModel? = null,
     documentsMainViewModel: DocumentsMainViewModel? = null,
     documentCreateViewModel: DocumentCreateViewModel? = null,
-    authRepository: AuthRepository? = null
+    authRepository: AuthRepository? = null,
+    devicePrefix: String = "",
+    deviceName: String = "",
+    deviceModel: String = ""
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     var currentScreen by remember { mutableStateOf("main") }
@@ -191,7 +195,10 @@ fun MainScreen(
                                         },
                                         onClearProgress = {
                                             directoriesViewModel.clearProgress()
-                                        }
+                                        },
+                                        devicePrefix = devicePrefix,
+                                        deviceName = deviceName,
+                                        deviceModel = deviceModel
                                     )
                                 } else {
                                     SettingsScreen()
@@ -274,26 +281,17 @@ fun MainScreen(
                             val description by documentCreateViewModel.description.collectAsState()
                             
                             if (showAddItemScreen) {
-                                DocumentItemAddScreen(
+                                AddItemScreen(
                                     nomenclature = nomenclature,
                                     units = units,
-                                    onSaveClick = { nomenclatureId, quantity, unitId, description ->
-                                        val newItem = com.sh.an.tsd.data.model.DocumentItem(
-                                            id = 0, // Временный ID
-                                            documentId = 0, // Будет установлен при сохранении документа
-                                            nomenclatureId = nomenclatureId,
-                                            quantity = quantity,
-                                            unitId = unitId,
-                                            price = null,
-                                            total = null,
-                                            description = description,
-                                            createdAt = null,
-                                            updatedAt = null
-                                        )
+                                    barcodes = emptyList(), // TODO: Получить штрих-коды из репозитория
+                                    onBackClick = { showAddItemScreen = false },
+                                    onItemAdd = { newItem ->
                                         documentCreateViewModel.addDocumentItem(newItem)
                                         showAddItemScreen = false
                                     },
-                                    onBackClick = { showAddItemScreen = false }
+                                    onBarcodeScan = { /* TODO: Реализовать сканирование */ },
+                                    onManualAdd = { /* TODO: Реализовать ручное добавление */ }
                                 )
                             } else {
                                 DocumentCreateScreen(

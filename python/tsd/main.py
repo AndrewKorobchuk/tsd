@@ -2,10 +2,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine
 from app.models import Base
-from app.routers import oauth, units, nomenclature_categories, nomenclature, warehouses, stocks, documents, inventories, barcodes
+from app.models_tsd import Base as TsdBase
+from app.models_barcodes import Base as BarcodesBase
+from app.routers import oauth, units, nomenclature_categories, nomenclature, warehouses, stocks, documents, inventories, barcodes, tsd_devices
 
 # Создание таблиц в базе данных
 Base.metadata.create_all(bind=engine)
+TsdBase.metadata.create_all(bind=engine)
+BarcodesBase.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="TSD API",
@@ -32,6 +36,7 @@ app.include_router(stocks.router, prefix="/api/v1")
 app.include_router(documents.router, prefix="/api/v1")
 app.include_router(inventories.router, prefix="/api/v1")
 app.include_router(barcodes.router, prefix="/api/v1")
+app.include_router(tsd_devices.router, prefix="/api/v1")
 
 
 @app.get("/")

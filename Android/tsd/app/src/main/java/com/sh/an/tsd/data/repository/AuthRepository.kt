@@ -6,6 +6,7 @@ import com.sh.an.tsd.data.api.NomenclatureCategoriesApiService
 import com.sh.an.tsd.data.api.NomenclatureApiService
 import com.sh.an.tsd.data.api.WarehousesApiService
 import com.sh.an.tsd.data.api.DocumentsApiService
+import com.sh.an.tsd.data.api.BarcodesApiService
 import com.sh.an.tsd.data.manager.SettingsManager
 import com.sh.an.tsd.data.factory.ApiServiceFactory
 import com.sh.an.tsd.data.model.*
@@ -175,9 +176,18 @@ class AuthRepository(private val settingsManager: SettingsManager) {
             return apiServiceFactory.createDocumentsApiService()
         }
         
+        fun createBarcodesApiService(): BarcodesApiService {
+            return apiServiceFactory.createBarcodesApiService()
+        }
+        
         // Метод для сброса API сервисов при изменении настроек
         fun resetApiServices() {
             apiServiceFactory.reset()
+        }
+        
+        // Метод для получения фабрики API сервисов
+        fun getApiServiceFactory(): ApiServiceFactory {
+            return apiServiceFactory
         }
 }
 

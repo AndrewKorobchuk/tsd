@@ -22,6 +22,15 @@ class SettingsManager(context: Context) {
         private const val KEY_USERNAME = "username"
         private const val KEY_USER_EMAIL = "user_email"
         private const val KEY_IS_LOGGED_IN = "is_logged_in"
+        
+        // ТСД настройки
+        private const val KEY_DEVICE_ID = "device_id"
+        private const val KEY_DEVICE_PREFIX = "device_prefix"
+        private const val KEY_DEVICE_NAME = "device_name"
+        private const val KEY_DEVICE_MODEL = "device_model"
+        private const val KEY_ANDROID_VERSION = "android_version"
+        private const val KEY_APP_VERSION = "app_version"
+        private const val KEY_DEVICE_REGISTERED = "device_registered"
     }
     
     fun saveConnectionSettings(settings: ConnectionSettings) {
@@ -123,6 +132,57 @@ class SettingsManager(context: Context) {
     
     fun isLoggedIn(): Boolean {
         return prefs.getBoolean(KEY_IS_LOGGED_IN, false) && isTokenValid()
+    }
+    
+    // ТСД методы
+    fun saveDeviceInfo(deviceId: String, prefix: String, deviceName: String, deviceModel: String) {
+        prefs.edit().apply {
+            putString(KEY_DEVICE_ID, deviceId)
+            putString(KEY_DEVICE_PREFIX, prefix)
+            putString(KEY_DEVICE_NAME, deviceName)
+            putString(KEY_DEVICE_MODEL, deviceModel)
+            putBoolean(KEY_DEVICE_REGISTERED, true)
+            apply()
+        }
+    }
+    
+    fun getDeviceId(): String {
+        return prefs.getString(KEY_DEVICE_ID, "") ?: ""
+    }
+    
+    fun getDevicePrefix(): String {
+        return prefs.getString(KEY_DEVICE_PREFIX, "") ?: ""
+    }
+    
+    fun getDeviceName(): String {
+        return prefs.getString(KEY_DEVICE_NAME, "") ?: ""
+    }
+    
+    fun getDeviceModel(): String {
+        return prefs.getString(KEY_DEVICE_MODEL, "") ?: ""
+    }
+    
+    fun getAndroidVersion(): String {
+        return prefs.getString(KEY_ANDROID_VERSION, "") ?: ""
+    }
+    
+    fun getAppVersion(): String {
+        return prefs.getString(KEY_APP_VERSION, "") ?: ""
+    }
+    
+    fun isDeviceRegistered(): Boolean {
+        return prefs.getBoolean(KEY_DEVICE_REGISTERED, false)
+    }
+    
+    fun clearDeviceInfo() {
+        prefs.edit().apply {
+            remove(KEY_DEVICE_ID)
+            remove(KEY_DEVICE_PREFIX)
+            remove(KEY_DEVICE_NAME)
+            remove(KEY_DEVICE_MODEL)
+            putBoolean(KEY_DEVICE_REGISTERED, false)
+            apply()
+        }
     }
     
     fun logout() {

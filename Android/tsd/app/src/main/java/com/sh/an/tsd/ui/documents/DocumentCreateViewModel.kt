@@ -7,6 +7,7 @@ import com.sh.an.tsd.data.repository.DocumentsRepository
 import com.sh.an.tsd.data.repository.WarehousesRepository
 import com.sh.an.tsd.data.repository.NomenclatureRepository
 import com.sh.an.tsd.data.repository.UnitsRepository
+import com.sh.an.tsd.data.repository.TsdDeviceRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,7 +21,9 @@ class DocumentCreateViewModel(
     private val documentsRepository: DocumentsRepository,
     private val warehousesRepository: WarehousesRepository,
     private val nomenclatureRepository: NomenclatureRepository,
-    private val unitsRepository: UnitsRepository
+    private val unitsRepository: UnitsRepository,
+    private val tsdDeviceRepository: TsdDeviceRepository,
+    private val devicePrefix: String = ""
 ) : ViewModel() {
 
     // Состояние формы документа
@@ -67,14 +70,36 @@ class DocumentCreateViewModel(
     private val _isSaving = MutableStateFlow(false)
     val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
 
-    // Генерация номера документа
+    // Генерация номера документа с инкрементной нумерацией
     fun generateDocumentNumber() {
-        val dateFormatter = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
-        val timeFormatter = SimpleDateFormat("HHmmss", Locale.getDefault())
-        val currentDate = Date()
-        val dateStr = dateFormatter.format(currentDate)
-        val timeStr = timeFormatter.format(currentDate)
-        _documentNumber.value = "ВО-$dateStr-$timeStr"
+        viewModelScope.launch {
+            try {
+                val result = tsdDeviceRepository.getNextDocumentNumber("input_balance")
+                if (result.isSuccess) {
+                    _documentNumber.value = result.getOrNull()?.documentNumber ?: ""
+                } else {
+                    // Fallback к старому методу, если не удалось получить номер с сервера
+                    val dateFormatter = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+                    val timeFormatter = SimpleDateFormat("HHmmss", Locale.getDefault())
+                    val currentDate = Date()
+                    val dateStr = dateFormatter.format(currentDate)
+                    val timeStr = timeFormatter.format(currentDate)
+                    
+                    val prefix = if (devicePrefix.isNotEmpty()) devicePrefix else "ВО"
+                    _documentNumber.value = "$prefix-$dateStr-$timeStr"
+                }
+            } catch (e: Exception) {
+                // Fallback к старому методу в случае ошибки
+                val dateFormatter = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+                val timeFormatter = SimpleDateFormat("HHmmss", Locale.getDefault())
+                val currentDate = Date()
+                val dateStr = dateFormatter.format(currentDate)
+                val timeStr = timeFormatter.format(currentDate)
+                
+                val prefix = if (devicePrefix.isNotEmpty()) devicePrefix else "ВО"
+                _documentNumber.value = "$prefix-$dateStr-$timeStr"
+            }
+        }
     }
 
     // Обновление полей формы
@@ -148,7 +173,8 @@ class DocumentCreateViewModel(
                         val currentDate = Date()
                         val dateStr = dateFormatter.format(currentDate)
                         val timeStr = timeFormatter.format(currentDate)
-                        "ВО-$dateStr-$timeStr"
+                        val prefix = if (devicePrefix.isNotEmpty()) devicePrefix else "ВО"
+                        "$prefix-$dateStr-$timeStr"
                     },
                     warehouse_id = warehouse.id,
                     date = dateFormatter.format(_documentDate.value),

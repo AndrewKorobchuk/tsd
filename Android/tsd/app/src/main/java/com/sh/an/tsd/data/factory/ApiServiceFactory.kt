@@ -53,6 +53,14 @@ class ApiServiceFactory(private val settingsManager: SettingsManager) {
         return retrofit.create(DocumentsApiService::class.java)
     }
     
+    fun createBarcodesApiService(): BarcodesApiService {
+        return retrofit.create(BarcodesApiService::class.java)
+    }
+    
+    fun createTsdDeviceApiService(): TsdDeviceApiService {
+        return retrofit.create(TsdDeviceApiService::class.java)
+    }
+    
     // Метод для сброса кэша retrofit (например, при изменении настроек)
     fun reset() {
         println("ApiServiceFactory: Resetting Retrofit cache")
