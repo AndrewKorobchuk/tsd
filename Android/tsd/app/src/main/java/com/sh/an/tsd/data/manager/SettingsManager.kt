@@ -37,11 +37,10 @@ class SettingsManager(context: Context) {
         val serverUrl = prefs.getString(KEY_SERVER_URL, null)
         val port = prefs.getString(KEY_PORT, null)
         
-        // Если настройки не сохранены, возвращаем пустые значения
-        // Это заставит пользователя настроить подключение
+        // Если настройки не сохранены, возвращаем значения по умолчанию
         return ConnectionSettings(
-            serverUrl = serverUrl ?: "",
-            port = port ?: "",
+            serverUrl = serverUrl ?: "localhost",
+            port = port ?: "8001",
             apiKey = prefs.getString(KEY_API_KEY, "") ?: ""
         )
     }

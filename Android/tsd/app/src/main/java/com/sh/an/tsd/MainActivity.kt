@@ -26,6 +26,8 @@ import com.sh.an.tsd.ui.nomenclature.NomenclatureCategoriesViewModel
 import com.sh.an.tsd.ui.nomenclature.NomenclatureItemsViewModel
 import com.sh.an.tsd.ui.warehouses.WarehousesViewModel
 import com.sh.an.tsd.ui.documents.DocumentsViewModel
+import com.sh.an.tsd.ui.documents.DocumentsMainViewModel
+import com.sh.an.tsd.ui.documents.DocumentCreateViewModel
 import com.sh.an.tsd.ui.login.LoginScreen
 import com.sh.an.tsd.ui.main.MainScreen
 import com.sh.an.tsd.ui.settings.ConnectionSettingsScreen
@@ -52,58 +54,85 @@ fun TsdApp() {
     
         // Инициализация базы данных и репозиториев
         val database = remember { TsdDatabase.getDatabase(context) }
-        // Создаем репозитории лениво, только когда они нужны
+        // Создаем репозитории лениво, только когда они нужны и есть настройки подключения
         val unitsRepository = remember { 
-            UnitsRepository(
-                authRepository.createUnitsApiService(),
-                database.unitOfMeasureDao()
-            )
+            if (authRepository.hasConnectionSettings()) {
+                UnitsRepository(
+                    authRepository.createUnitsApiService(),
+                    database.unitOfMeasureDao()
+                )
+            } else null
         }
         val nomenclatureCategoriesRepository = remember {
-            NomenclatureCategoriesRepository(
-                authRepository.createNomenclatureCategoriesApiService(),
-                database.nomenclatureCategoryDao()
-            )
+            if (authRepository.hasConnectionSettings()) {
+                NomenclatureCategoriesRepository(
+                    authRepository.createNomenclatureCategoriesApiService(),
+                    database.nomenclatureCategoryDao()
+                )
+            } else null
         }
         val nomenclatureRepository = remember {
-            NomenclatureRepository(
-                authRepository.createNomenclatureApiService(),
-                database.nomenclatureDao()
-            )
+            if (authRepository.hasConnectionSettings()) {
+                NomenclatureRepository(
+                    authRepository.createNomenclatureApiService(),
+                    database.nomenclatureDao()
+                )
+            } else null
         }
         val warehousesRepository = remember {
-            WarehousesRepository(
-                authRepository.createWarehousesApiService(),
-                database.warehouseDao()
-            )
+            if (authRepository.hasConnectionSettings()) {
+                WarehousesRepository(
+                    authRepository.createWarehousesApiService(),
+                    database.warehouseDao()
+                )
+            } else null
         }
         val documentsRepository = remember {
-            DocumentsRepository(
-                authRepository.createDocumentsApiService(),
-                database.documentDao(),
-                database.documentItemDao()
-            )
+            if (authRepository.hasConnectionSettings()) {
+                DocumentsRepository(
+                    authRepository.createDocumentsApiService(),
+                    database.documentDao(),
+                    database.documentItemDao()
+                )
+            } else null
         }
-        val unitsViewModel = remember { UnitsViewModel(unitsRepository) }
+        val unitsViewModel = remember { unitsRepository?.let { UnitsViewModel(it) } }
         val directoriesViewModel = remember { 
-            DirectoriesViewModel(
-                unitsRepository,
-                nomenclatureCategoriesRepository,
-                nomenclatureRepository,
-                warehousesRepository
-            )
+            if (unitsRepository != null && nomenclatureCategoriesRepository != null && 
+                nomenclatureRepository != null && warehousesRepository != null) {
+                DirectoriesViewModel(
+                    unitsRepository,
+                    nomenclatureCategoriesRepository,
+                    nomenclatureRepository,
+                    warehousesRepository
+                )
+            } else null
         }
         val nomenclatureCategoriesViewModel = remember {
-            NomenclatureCategoriesViewModel(nomenclatureCategoriesRepository)
+            nomenclatureCategoriesRepository?.let { NomenclatureCategoriesViewModel(it) }
         }
         val nomenclatureItemsViewModel = remember {
-            NomenclatureItemsViewModel(nomenclatureRepository)
+            nomenclatureRepository?.let { NomenclatureItemsViewModel(it) }
         }
         val warehousesViewModel = remember {
-            WarehousesViewModel(warehousesRepository)
+            warehousesRepository?.let { WarehousesViewModel(it) }
         }
         val documentsViewModel = remember {
-            DocumentsViewModel(documentsRepository)
+            documentsRepository?.let { DocumentsViewModel(it) }
+        }
+        val documentsMainViewModel = remember {
+            documentsRepository?.let { DocumentsMainViewModel(it) }
+        }
+        val documentCreateViewModel = remember {
+            if (documentsRepository != null && warehousesRepository != null && 
+                nomenclatureRepository != null && unitsRepository != null) {
+                DocumentCreateViewModel(
+                    documentsRepository,
+                    warehousesRepository,
+                    nomenclatureRepository,
+                    unitsRepository
+                )
+            } else null
         }
     
     var currentScreen by remember { mutableStateOf("login") }
@@ -153,6 +182,8 @@ fun TsdApp() {
                     onSaveClick = { serverUrl, port, apiKey ->
                         val settings = com.sh.an.tsd.data.model.ConnectionSettings(serverUrl, port, apiKey)
                         settingsManager.saveConnectionSettings(settings)
+                        // Сбрасываем кэш Retrofit для использования новых настроек
+                        authRepository.resetApiServiceFactory()
                         println("Settings saved: ${settings.getFullUrl()}")
                         currentScreen = "login"
                     },
@@ -175,6 +206,8 @@ fun TsdApp() {
                     nomenclatureItemsViewModel = nomenclatureItemsViewModel,
                     warehousesViewModel = warehousesViewModel,
                     documentsViewModel = documentsViewModel,
+                    documentsMainViewModel = documentsMainViewModel,
+                    documentCreateViewModel = documentCreateViewModel,
                     authRepository = authRepository
                 )
     }

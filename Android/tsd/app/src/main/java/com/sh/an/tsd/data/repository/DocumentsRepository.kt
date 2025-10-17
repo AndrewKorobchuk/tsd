@@ -1,6 +1,8 @@
 package com.sh.an.tsd.data.repository
 
 import com.sh.an.tsd.data.api.DocumentsApiService
+import com.sh.an.tsd.data.api.DocumentCreateRequest
+import com.sh.an.tsd.data.api.DocumentItemCreateRequest
 import com.sh.an.tsd.data.database.DocumentDao
 import com.sh.an.tsd.data.database.DocumentItemDao
 import com.sh.an.tsd.data.model.Document
@@ -212,4 +214,50 @@ class DocumentsRepository(
     suspend fun getLocalDocumentsCountByType(documentType: DocumentType): Int {
         return documentDao.getDocumentsCountByType(documentType.value)
     }
+
+    suspend fun createDocument(documentRequest: DocumentCreateRequest): Result<Document> {
+        return try {
+            val response = documentsApiService.createDocument(
+                authorization = "Bearer dummy_token", // TODO: Получить реальный токен
+                document = documentRequest
+            )
+            if (response.isSuccessful) {
+                val document = response.body()
+                if (document != null) {
+                    documentDao.insertDocument(document)
+                    Result.success(document)
+                } else {
+                    Result.failure(IOException("Empty response body"))
+                }
+            } else {
+                Result.failure(IOException("Failed to create document: ${response.code()} - ${response.errorBody()?.string()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun createDocumentItem(documentId: Int, itemRequest: DocumentItemCreateRequest): Result<DocumentItem> {
+        return try {
+            val response = documentsApiService.createDocumentItem(
+                authorization = "Bearer dummy_token", // TODO: Получить реальный токен
+                documentId = documentId,
+                item = itemRequest
+            )
+            if (response.isSuccessful) {
+                val item = response.body()
+                if (item != null) {
+                    documentItemDao.insertDocumentItem(item)
+                    Result.success(item)
+                } else {
+                    Result.failure(IOException("Empty response body"))
+                }
+            } else {
+                Result.failure(IOException("Failed to create document item: ${response.code()} - ${response.errorBody()?.string()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
+

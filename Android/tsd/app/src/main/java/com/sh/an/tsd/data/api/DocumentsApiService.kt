@@ -7,7 +7,7 @@ import retrofit2.http.*
 
 interface DocumentsApiService {
     
-    @GET("documents/")
+    @GET("api/v1/documents/")
     suspend fun getDocuments(
         @Header("Authorization") authorization: String,
         @Query("skip") skip: Int = 0,
@@ -17,59 +17,59 @@ interface DocumentsApiService {
         @Query("status") status: String? = null
     ): Response<List<Document>>
     
-    @GET("documents/{document_id}")
+    @GET("api/v1/documents/{document_id}")
     suspend fun getDocument(
         @Header("Authorization") authorization: String,
         @Path("document_id") documentId: Int
     ): Response<Document>
     
-    @POST("documents/")
+    @POST("api/v1/documents/")
     suspend fun createDocument(
         @Header("Authorization") authorization: String,
         @Body document: DocumentCreateRequest
     ): Response<Document>
     
-    @PUT("documents/{document_id}")
+    @PUT("api/v1/documents/{document_id}")
     suspend fun updateDocument(
         @Header("Authorization") authorization: String,
         @Path("document_id") documentId: Int,
         @Body document: DocumentUpdateRequest
     ): Response<Document>
     
-    @DELETE("documents/{document_id}")
+    @DELETE("api/v1/documents/{document_id}")
     suspend fun deleteDocument(
         @Header("Authorization") authorization: String,
         @Path("document_id") documentId: Int
     ): Response<Unit>
     
-    @PATCH("documents/{document_id}/post")
+    @PATCH("api/v1/documents/{document_id}/post")
     suspend fun postDocument(
         @Header("Authorization") authorization: String,
         @Path("document_id") documentId: Int
     ): Response<Map<String, String>>
     
-    @PATCH("documents/{document_id}/cancel")
+    @PATCH("api/v1/documents/{document_id}/cancel")
     suspend fun cancelDocument(
         @Header("Authorization") authorization: String,
         @Path("document_id") documentId: Int
     ): Response<Map<String, String>>
     
     // Эндпоинты для работы со строками документов
-    @POST("documents/{document_id}/items")
+    @POST("api/v1/documents/{document_id}/items")
     suspend fun createDocumentItem(
         @Header("Authorization") authorization: String,
         @Path("document_id") documentId: Int,
         @Body item: DocumentItemCreateRequest
     ): Response<DocumentItem>
     
-    @PUT("documents/items/{item_id}")
+    @PUT("api/v1/documents/items/{item_id}")
     suspend fun updateDocumentItem(
         @Header("Authorization") authorization: String,
         @Path("item_id") itemId: Int,
         @Body item: DocumentItemUpdateRequest
     ): Response<DocumentItem>
     
-    @DELETE("documents/items/{item_id}")
+    @DELETE("api/v1/documents/items/{item_id}")
     suspend fun deleteDocumentItem(
         @Header("Authorization") authorization: String,
         @Path("item_id") itemId: Int
@@ -114,3 +114,5 @@ data class DocumentItemUpdateRequest(
     val total: Double? = null,
     val description: String? = null
 )
+
+

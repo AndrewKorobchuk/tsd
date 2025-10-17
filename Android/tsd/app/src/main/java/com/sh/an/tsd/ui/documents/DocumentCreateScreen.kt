@@ -12,11 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.sh.an.tsd.data.model.Document
-import com.sh.an.tsd.data.model.DocumentItem
 import com.sh.an.tsd.data.model.DocumentType
-import com.sh.an.tsd.data.model.DocumentStatus
 import com.sh.an.tsd.data.model.Warehouse
+import com.sh.an.tsd.data.model.DocumentItem
 import com.sh.an.tsd.data.model.Nomenclature
 import com.sh.an.tsd.data.model.UnitOfMeasure
 import java.text.SimpleDateFormat
@@ -27,24 +25,28 @@ import java.util.*
 fun DocumentCreateScreen(
     documentType: DocumentType,
     warehouses: List<Warehouse>,
+    documentItems: List<DocumentItem>,
     nomenclature: List<Nomenclature>,
     units: List<UnitOfMeasure>,
-    documentItems: List<DocumentItem>,
     isLoading: Boolean,
     errorMessage: String?,
+    documentNumber: String,
+    selectedWarehouse: Warehouse?,
+    documentDate: Date,
+    description: String,
     onBackClick: () -> Unit,
-    onSaveClick: (Document) -> Unit,
+    onSaveClick: () -> Unit,
     onAddItemClick: () -> Unit,
     onEditItemClick: (DocumentItem) -> Unit,
     onDeleteItemClick: (DocumentItem) -> Unit,
-    onClearError: () -> Unit
+    onClearError: () -> Unit,
+    onDocumentNumberChange: (String) -> Unit,
+    onWarehouseChange: (Warehouse?) -> Unit,
+    onDateChange: (Date) -> Unit,
+    onDescriptionChange: (String) -> Unit
 ) {
-    var documentNumber by remember { mutableStateOf("") }
-    var selectedWarehouse by remember { mutableStateOf<Warehouse?>(null) }
-    var documentDate by remember { mutableStateOf(getCurrentDate()) }
-    var description by remember { mutableStateOf("") }
-    var showWarehouseDialog by remember { mutableStateOf(false) }
-
+    val dateFormatter = remember { SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()) }
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -56,56 +58,55 @@ fun DocumentCreateScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Створити документ",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
-            )
-            
-            Row {
-                TextButton(
-                    onClick = onBackClick,
-                    enabled = !isLoading
-                ) {
-                    Text("Скасувати")
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBackClick) {
+                    Icon(
+                        Icons.Filled.ArrowBack,
+                        contentDescription = "Назад"
+                    )
                 }
                 
-                Spacer(modifier = Modifier.width(8.dp))
-                
-                Button(
-                    onClick = {
-                        if (selectedWarehouse != null && documentNumber.isNotBlank() && documentItems.isNotEmpty()) {
-                            val document = Document(
-                                id = 0, // Будет установлен сервером
-                                documentType = documentType.value,
-                                documentNumber = documentNumber,
-                                warehouseId = selectedWarehouse!!.id,
-                                date = documentDate,
-                                status = DocumentStatus.DRAFT.value,
-                                createdBy = 0, // Будет установлен сервером
-                                description = description.takeIf { it.isNotBlank() },
-                                createdAt = getCurrentDateTime(),
-                                updatedAt = null
-                            )
-                            onSaveClick(document)
-                        }
+                Text(
+                    text = when (documentType) {
+                        DocumentType.STOCK_INPUT -> "Создание документа: Ввод остатков"
+                        DocumentType.RECEIPT -> "Создание документа: Приход"
+                        DocumentType.EXPENSE -> "Создание документа: Расход"
+                        DocumentType.TRANSFER -> "Создание документа: Перемещение"
+                        DocumentType.INVENTORY -> "Создание документа: Инвентаризация"
                     },
-                    enabled = !isLoading && selectedWarehouse != null && documentNumber.isNotBlank() && documentItems.isNotEmpty()
-                ) {
-                    Text("Зберегти")
-                }
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            
+            IconButton(
+                onClick = onSaveClick,
+                enabled = selectedWarehouse != null && documentItems.isNotEmpty()
+            ) {
+                Icon(
+                    Icons.Filled.Save,
+                    contentDescription = "Сохранить",
+                    tint = if (selectedWarehouse != null && documentItems.isNotEmpty()) 
+                        MaterialTheme.colorScheme.primary 
+                    else 
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
-
+        
         Spacer(modifier = Modifier.height(16.dp))
-
+        
         // Показать ошибку
         errorMessage?.let { error ->
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                    .padding(bottom = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
             ) {
                 Row(
                     modifier = Modifier
@@ -122,224 +123,176 @@ fun DocumentCreateScreen(
                     IconButton(onClick = onClearError) {
                         Icon(
                             Icons.Filled.Close,
-                            contentDescription = "Закрити",
+                            contentDescription = "Закрыть",
                             tint = MaterialTheme.colorScheme.onErrorContainer
                         )
                     }
                 }
             }
         }
-
+        
+        // Форма документа
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                // Основная информация о документе
-                Card {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
+                // Номер документа
+                OutlinedTextField(
+                    value = documentNumber,
+                    onValueChange = onDocumentNumberChange,
+                    label = { Text("Номер документа") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
+            
+            item {
+                // Склад
+                var expanded by remember { mutableStateOf(false) }
+                
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded }
+                ) {
+                    OutlinedTextField(
+                        value = selectedWarehouse?.name ?: "",
+                        onValueChange = { },
+                        readOnly = true,
+                        label = { Text("Склад *") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                    )
+                    
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
                     ) {
-                        Text(
-                            text = "Основна інформація",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        // Номер документа
-                        OutlinedTextField(
-                            value = documentNumber,
-                            onValueChange = { documentNumber = it },
-                            label = { Text("Номер документа") },
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = !isLoading
-                        )
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        // Склад
-                        OutlinedTextField(
-                            value = selectedWarehouse?.name ?: "",
-                            onValueChange = { },
-                            label = { Text("Склад") },
-                            modifier = Modifier.fillMaxWidth(),
-                            readOnly = true,
-                            trailingIcon = {
-                                IconButton(onClick = { showWarehouseDialog = true }) {
-                                    Icon(Icons.Filled.ArrowDropDown, contentDescription = "Вибрати склад")
+                        warehouses.forEach { warehouse ->
+                            DropdownMenuItem(
+                                text = { Text(warehouse.name) },
+                                onClick = {
+                                    onWarehouseChange(warehouse)
+                                    expanded = false
                                 }
-                            },
-                            enabled = !isLoading
-                        )
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        // Дата документа
-                        OutlinedTextField(
-                            value = documentDate,
-                            onValueChange = { documentDate = it },
-                            label = { Text("Дата документа") },
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = !isLoading
-                        )
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        // Описание
-                        OutlinedTextField(
-                            value = description,
-                            onValueChange = { description = it },
-                            label = { Text("Опис (необов'язково)") },
-                            modifier = Modifier.fillMaxWidth(),
-                            maxLines = 3,
-                            enabled = !isLoading
-                        )
+                            )
+                        }
                     }
                 }
             }
             
             item {
-                // Строки документа
-                Card {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Строки документа",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            
-                            Button(
-                                onClick = onAddItemClick,
-                                enabled = !isLoading && selectedWarehouse != null
-                            ) {
-                                Icon(Icons.Filled.Add, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Додати")
-                            }
+                // Дата документа
+                OutlinedTextField(
+                    value = dateFormatter.format(documentDate),
+                    onValueChange = { },
+                    label = { Text("Дата документа") },
+                    readOnly = true,
+                    trailingIcon = {
+                        IconButton(onClick = { /* TODO: Добавить выбор даты */ }) {
+                            Icon(Icons.Filled.DateRange, contentDescription = "Выбрать дату")
                         }
-                        
-                        if (documentItems.isEmpty()) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = "Додайте строки до документа",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.fillMaxWidth(),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        } else {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            documentItems.forEach { item ->
-                                DocumentItemCard(
-                                    item = item,
-                                    nomenclature = nomenclature.find { n -> n.id == item.nomenclatureId },
-                                    unit = units.find { u -> u.id == item.unitId },
-                                    onEditClick = { onEditItemClick(item) },
-                                    onDeleteClick = { onDeleteItemClick(item) },
-                                    enabled = !isLoading
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // Диалог выбора склада
-    if (showWarehouseDialog) {
-        AlertDialog(
-            onDismissRequest = { showWarehouseDialog = false },
-            title = { Text("Вибрати склад") },
-            text = {
-                Column {
-                    warehouses.forEach { warehouse ->
-                        TextButton(
-                            onClick = {
-                                selectedWarehouse = warehouse
-                                showWarehouseDialog = false
-                            }
-                        ) {
-                            Text(warehouse.name)
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showWarehouseDialog = false }) {
-                    Text("Скасувати")
-                }
-            }
-        )
-    }
-}
-
-@Composable
-fun DocumentItemCard(
-    item: DocumentItem,
-    nomenclature: Nomenclature?,
-    unit: UnitOfMeasure?,
-    onEditClick: () -> Unit,
-    onDeleteClick: () -> Unit,
-    enabled: Boolean
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = nomenclature?.name ?: "Невідома номенклатура",
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = "Кількість: ${item.quantity} ${unit?.shortName ?: ""}",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 14.sp
+                    },
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
             
-            Row {
-                IconButton(
-                    onClick = onEditClick,
-                    enabled = enabled
+            item {
+                // Описание
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = onDescriptionChange,
+                    label = { Text("Описание") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 4
+                )
+            }
+            
+            item {
+                // Заголовок строк документа
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Filled.Edit, contentDescription = "Редагувати")
+                    Text(
+                        text = "Строки документа",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    
+                    Button(
+                        onClick = onAddItemClick,
+                        enabled = selectedWarehouse != null
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Добавить")
+                    }
                 }
-                
-                IconButton(
-                    onClick = onDeleteClick,
-                    enabled = enabled
-                ) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Видалити")
+            }
+            
+            // Строки документа
+            items(documentItems) { item ->
+                DocumentItemCard(
+                    item = item,
+                    nomenclature = nomenclature.find { it.id == item.nomenclatureId },
+                    unit = units.find { it.id == item.unitId },
+                    onEditClick = { onEditItemClick(item) },
+                    onDeleteClick = { onDeleteItemClick(item) },
+                    enabled = true
+                )
+            }
+            
+            if (documentItems.isEmpty()) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                Icons.Filled.Inventory,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Нет строк документа",
+                                fontSize = 16.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Нажмите 'Добавить' для добавления номенклатуры",
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 }
             }
         }
     }
-}
-
-private fun getCurrentDate(): String {
-    val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-    return format.format(Date())
-}
-
-private fun getCurrentDateTime(): String {
-    val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-    return format.format(Date())
+    
+    // Показать индикатор загрузки
+    if (isLoading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+    }
 }

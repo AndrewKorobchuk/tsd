@@ -15,6 +15,8 @@ class ApiServiceFactory(private val settingsManager: SettingsManager) {
                 val settings = settingsManager.getConnectionSettings()
                 val baseUrl = settings.getFullUrl()
                 
+                println("ApiServiceFactory: Creating Retrofit with base URL: $baseUrl")
+                
                 if (baseUrl.isBlank()) {
                     throw IllegalStateException("Server URL is not configured. Please set up connection settings first.")
                 }
@@ -53,6 +55,7 @@ class ApiServiceFactory(private val settingsManager: SettingsManager) {
     
     // Метод для сброса кэша retrofit (например, при изменении настроек)
     fun reset() {
+        println("ApiServiceFactory: Resetting Retrofit cache")
         _retrofit = null
     }
 }

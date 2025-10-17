@@ -37,3 +37,5 @@ interface DocumentItemDao {
     @Query("SELECT COUNT(*) FROM document_items WHERE document_id = :documentId")
     suspend fun getDocumentItemsCount(documentId: Int): Int
 }
+
+

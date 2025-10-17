@@ -33,11 +33,13 @@ fun DocumentsScreen(
     onSyncClick: () -> Unit,
     onClearFilters: () -> Unit,
     onClearError: () -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onCreateDocumentClick: () -> Unit,
+    showBackButton: Boolean = false
 ) {
     var showTypeFilter by remember { mutableStateOf(false) }
     var showStatusFilter by remember { mutableStateOf(false) }
-
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -49,27 +51,56 @@ fun DocumentsScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Документи",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (showBackButton) {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            Icons.Filled.ArrowBack,
+                            contentDescription = "Назад"
+                        )
+                    }
+                }
+                
+                Text(
+                    text = when (selectedDocumentType) {
+                        DocumentType.STOCK_INPUT -> "Ввод остатков"
+                        DocumentType.RECEIPT -> "Приход"
+                        DocumentType.EXPENSE -> "Расход"
+                        DocumentType.TRANSFER -> "Перемещение"
+                        DocumentType.INVENTORY -> "Инвентаризация"
+                        null -> "Документи"
+                    },
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
             
             Row {
-                IconButton(onClick = { showTypeFilter = true }) {
+                IconButton(onClick = onCreateDocumentClick) {
                     Icon(
-                        Icons.Filled.FilterList,
-                        contentDescription = "Фільтр по типу",
-                        tint = if (selectedDocumentType != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        Icons.Filled.Add,
+                        contentDescription = "Створити документ"
                     )
                 }
                 
-                IconButton(onClick = { showStatusFilter = true }) {
-                    Icon(
-                        Icons.Filled.FilterAlt,
-                        contentDescription = "Фільтр по статусу",
-                        tint = if (selectedStatus != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                    )
+                if (!showBackButton) {
+                    IconButton(onClick = { showTypeFilter = true }) {
+                        Icon(
+                            Icons.Filled.FilterList,
+                            contentDescription = "Фільтр по типу",
+                            tint = if (selectedDocumentType != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    
+                    IconButton(onClick = { showStatusFilter = true }) {
+                        Icon(
+                            Icons.Filled.FilterAlt,
+                            contentDescription = "Фільтр по статусу",
+                            tint = if (selectedStatus != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
                 
                 IconButton(onClick = onSyncClick) {
@@ -90,8 +121,8 @@ fun DocumentsScreen(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
                         .padding(16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
@@ -106,21 +137,21 @@ fun DocumentsScreen(
                             Icons.Filled.Close,
                             contentDescription = "Закрити",
                             tint = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                    }
-                }
+                )
             }
         }
+    }
+}
 
         // Активные фильтры
         if (selectedDocumentType != null || selectedStatus != null) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
                     .padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            verticalAlignment = Alignment.CenterVertically
+        ) {
                 Text(
                     text = "Активні фільтри:",
                     fontWeight = FontWeight.Medium
@@ -140,9 +171,9 @@ fun DocumentsScreen(
                 CircularProgressIndicator()
             }
         } else if (documents.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -269,7 +300,7 @@ fun DocumentCard(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(
+            Column(
             modifier = Modifier.padding(16.dp)
         ) {
             Row(
@@ -291,11 +322,11 @@ fun DocumentCard(
                 text = getDocumentTypeDisplayName(DocumentType.fromString(document.documentType)),
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            
-            Spacer(modifier = Modifier.height(4.dp))
-            
-            Text(
+                )
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                Text(
                 text = formatDate(document.date),
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -304,9 +335,9 @@ fun DocumentCard(
             document.description?.let { description ->
                 if (description.isNotBlank()) {
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(
+                Text(
                         text = description,
-                        fontSize = 12.sp,
+                    fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2
                     )

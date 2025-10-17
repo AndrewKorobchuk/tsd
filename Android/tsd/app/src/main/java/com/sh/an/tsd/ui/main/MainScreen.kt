@@ -12,8 +12,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.util.Date
 import com.sh.an.tsd.ui.documents.DocumentsScreen
 import com.sh.an.tsd.ui.documents.DocumentsViewModel
+import com.sh.an.tsd.ui.documents.DocumentsMainScreen
+import com.sh.an.tsd.ui.documents.DocumentsMainViewModel
+import com.sh.an.tsd.ui.documents.DocumentCreateScreen
+import com.sh.an.tsd.ui.documents.DocumentCreateViewModel
+import com.sh.an.tsd.ui.documents.DocumentItemAddScreen
 import com.sh.an.tsd.ui.directories.DirectoriesScreen
 import com.sh.an.tsd.ui.settings.SettingsScreen
 import com.sh.an.tsd.ui.units.UnitsScreen
@@ -38,12 +44,16 @@ fun MainScreen(
     nomenclatureItemsViewModel: NomenclatureItemsViewModel? = null,
     warehousesViewModel: WarehousesViewModel? = null,
     documentsViewModel: DocumentsViewModel? = null,
+    documentsMainViewModel: DocumentsMainViewModel? = null,
+    documentCreateViewModel: DocumentCreateViewModel? = null,
     authRepository: AuthRepository? = null
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     var currentScreen by remember { mutableStateOf("main") }
     var currentCategoryId by remember { mutableStateOf("") }
     var currentCategoryName by remember { mutableStateOf("") }
+    var documentCreateScreen by remember { mutableStateOf("") }
+    var showAddItemScreen by remember { mutableStateOf(false) }
     
         val tabs = listOf(
             TabItem("Документи", Icons.Filled.Description),
@@ -100,45 +110,37 @@ fun MainScreen(
                     "main" -> {
                         when (selectedTab) {
                             0 -> {
-                                if (documentsViewModel != null) {
-                                    val documents by documentsViewModel.documents.collectAsState()
-                                    val isLoading by documentsViewModel.isLoading.collectAsState()
-                                    val errorMessage by documentsViewModel.errorMessage.collectAsState()
-                                    val selectedDocumentType by documentsViewModel.selectedDocumentType.collectAsState()
-                                    val selectedStatus by documentsViewModel.selectedStatus.collectAsState()
+                                if (documentsMainViewModel != null) {
+                                    val stockInputCount by documentsMainViewModel.stockInputCount.collectAsState()
+                                    val receiptCount by documentsMainViewModel.receiptCount.collectAsState()
+                                    val expenseCount by documentsMainViewModel.expenseCount.collectAsState()
+                                    val transferCount by documentsMainViewModel.transferCount.collectAsState()
+                                    val inventoryCount by documentsMainViewModel.inventoryCount.collectAsState()
                                     
-                                    DocumentsScreen(
-                                        documents = documents,
-                                        isLoading = isLoading,
-                                        errorMessage = errorMessage,
-                                        selectedDocumentType = selectedDocumentType,
-                                        selectedStatus = selectedStatus,
-                                        onDocumentClick = { /* TODO: Открыть детали документа */ },
-                                        onFilterByType = { documentsViewModel.filterByDocumentType(it) },
-                                        onFilterByStatus = { documentsViewModel.filterByStatus(it) },
-                                        onSyncClick = { 
-                                            authRepository?.let { auth ->
-                                                documentsViewModel.syncDocumentsFromServer("Bearer ${auth.getAccessToken()}")
-                                            }
-                                        },
-                                        onClearFilters = { documentsViewModel.clearFilters() },
-                                        onClearError = { documentsViewModel.clearError() },
-                                        onBackClick = { /* Не нужно для главного экрана */ }
+                                    DocumentsMainScreen(
+                                        onStockInputClick = { currentScreen = "documents_stock_input" },
+                                        onReceiptClick = { currentScreen = "documents_receipt" },
+                                        onExpenseClick = { currentScreen = "documents_expense" },
+                                        onTransferClick = { currentScreen = "documents_transfer" },
+                                        onInventoryClick = { currentScreen = "documents_inventory" },
+                                        stockInputCount = stockInputCount,
+                                        receiptCount = receiptCount,
+                                        expenseCount = expenseCount,
+                                        transferCount = transferCount,
+                                        inventoryCount = inventoryCount
                                     )
                                 } else {
-                                    DocumentsScreen(
-                                        documents = emptyList(),
-                                        isLoading = false,
-                                        errorMessage = "DocumentsViewModel не инициализирован",
-                                        selectedDocumentType = null,
-                                        selectedStatus = null,
-                                        onDocumentClick = { },
-                                        onFilterByType = { },
-                                        onFilterByStatus = { },
-                                        onSyncClick = { },
-                                        onClearFilters = { },
-                                        onClearError = { },
-                                        onBackClick = { }
+                                    DocumentsMainScreen(
+                                        onStockInputClick = { currentScreen = "documents_stock_input" },
+                                        onReceiptClick = { currentScreen = "documents_receipt" },
+                                        onExpenseClick = { currentScreen = "documents_expense" },
+                                        onTransferClick = { currentScreen = "documents_transfer" },
+                                        onInventoryClick = { currentScreen = "documents_inventory" },
+                                        stockInputCount = 0,
+                                        receiptCount = 0,
+                                        expenseCount = 0,
+                                        transferCount = 0,
+                                        inventoryCount = 0
                                     )
                                 }
                             }
@@ -195,6 +197,157 @@ fun MainScreen(
                                     SettingsScreen()
                                 }
                             }
+                        }
+                    }
+                    "documents_stock_input" -> {
+                        if (documentsViewModel != null) {
+                            val documents by documentsViewModel.documents.collectAsState()
+                            val isLoading by documentsViewModel.isLoading.collectAsState()
+                            val errorMessage by documentsViewModel.errorMessage.collectAsState()
+                            
+                            DocumentsScreen(
+                                documents = documents,
+                                isLoading = isLoading,
+                                errorMessage = errorMessage,
+                                selectedDocumentType = com.sh.an.tsd.data.model.DocumentType.STOCK_INPUT,
+                                selectedStatus = null,
+                                onDocumentClick = { /* TODO: Открыть детали документа */ },
+                                onFilterByType = { documentsViewModel.filterByDocumentType(it) },
+                                onFilterByStatus = { documentsViewModel.filterByStatus(it) },
+                                onSyncClick = { 
+                                    authRepository?.let { auth ->
+                                        documentsViewModel.syncDocumentsFromServer("Bearer ${auth.getAccessToken()}")
+                                    }
+                                },
+                                onClearFilters = { documentsViewModel.clearFilters() },
+                                onClearError = { documentsViewModel.clearError() },
+                                onBackClick = { currentScreen = "main" },
+                                onCreateDocumentClick = { 
+                                    documentCreateScreen = "stock_input"
+                                    currentScreen = "document_create"
+                                },
+                                showBackButton = true
+                            )
+                        } else {
+                            DocumentsScreen(
+                                documents = emptyList(),
+                                isLoading = false,
+                                errorMessage = "DocumentsViewModel не инициализирован",
+                                selectedDocumentType = com.sh.an.tsd.data.model.DocumentType.STOCK_INPUT,
+                                selectedStatus = null,
+                                onDocumentClick = { },
+                                onFilterByType = { },
+                                onFilterByStatus = { },
+                                onSyncClick = { },
+                                onClearFilters = { },
+                                onClearError = { },
+                                onBackClick = { currentScreen = "main" },
+                                onCreateDocumentClick = { 
+                                    documentCreateScreen = "stock_input"
+                                    currentScreen = "document_create"
+                                },
+                                showBackButton = true
+                            )
+                        }
+                    }
+                    "document_create" -> {
+                        val documentType = when (documentCreateScreen) {
+                            "stock_input" -> com.sh.an.tsd.data.model.DocumentType.STOCK_INPUT
+                            "receipt" -> com.sh.an.tsd.data.model.DocumentType.RECEIPT
+                            "expense" -> com.sh.an.tsd.data.model.DocumentType.EXPENSE
+                            "transfer" -> com.sh.an.tsd.data.model.DocumentType.TRANSFER
+                            "inventory" -> com.sh.an.tsd.data.model.DocumentType.INVENTORY
+                            else -> com.sh.an.tsd.data.model.DocumentType.STOCK_INPUT
+                        }
+                        
+                        if (documentCreateViewModel != null) {
+                            val warehouses by documentCreateViewModel.warehouses.collectAsState()
+                            val units by documentCreateViewModel.units.collectAsState()
+                            val nomenclature by documentCreateViewModel.nomenclature.collectAsState()
+                            val documentItems by documentCreateViewModel.documentItems.collectAsState()
+                            val isLoading by documentCreateViewModel.isLoading.collectAsState()
+                            val errorMessage by documentCreateViewModel.errorMessage.collectAsState()
+                            val isSaving by documentCreateViewModel.isSaving.collectAsState()
+                            val documentNumber by documentCreateViewModel.documentNumber.collectAsState()
+                            val selectedWarehouse by documentCreateViewModel.selectedWarehouse.collectAsState()
+                            val documentDate by documentCreateViewModel.documentDate.collectAsState()
+                            val description by documentCreateViewModel.description.collectAsState()
+                            
+                            if (showAddItemScreen) {
+                                DocumentItemAddScreen(
+                                    nomenclature = nomenclature,
+                                    units = units,
+                                    onSaveClick = { nomenclatureId, quantity, unitId, description ->
+                                        val newItem = com.sh.an.tsd.data.model.DocumentItem(
+                                            id = 0, // Временный ID
+                                            documentId = 0, // Будет установлен при сохранении документа
+                                            nomenclatureId = nomenclatureId,
+                                            quantity = quantity,
+                                            unitId = unitId,
+                                            price = null,
+                                            total = null,
+                                            description = description,
+                                            createdAt = null,
+                                            updatedAt = null
+                                        )
+                                        documentCreateViewModel.addDocumentItem(newItem)
+                                        showAddItemScreen = false
+                                    },
+                                    onBackClick = { showAddItemScreen = false }
+                                )
+                            } else {
+                                DocumentCreateScreen(
+                                    documentType = documentType,
+                                    warehouses = warehouses,
+                                    documentItems = documentItems,
+                                    nomenclature = nomenclature,
+                                    units = units,
+                                    isLoading = isLoading || isSaving,
+                                    errorMessage = errorMessage,
+                                    documentNumber = documentNumber,
+                                    selectedWarehouse = selectedWarehouse,
+                                    documentDate = documentDate,
+                                    description = description,
+                                    onBackClick = { currentScreen = "documents_stock_input" },
+                                    onSaveClick = { 
+                                        documentCreateViewModel.saveDocument(documentType) {
+                                            currentScreen = "documents_stock_input"
+                                        }
+                                    },
+                                    onAddItemClick = { showAddItemScreen = true },
+                                    onEditItemClick = { /* TODO: Редактировать строку */ },
+                                    onDeleteItemClick = { item -> documentCreateViewModel.removeDocumentItem(item) },
+                                    onClearError = { documentCreateViewModel.clearError() },
+                                    onDocumentNumberChange = { documentCreateViewModel.updateDocumentNumber(it) },
+                                    onWarehouseChange = { documentCreateViewModel.updateSelectedWarehouse(it) },
+                                    onDateChange = { documentCreateViewModel.updateDocumentDate(it) },
+                                    onDescriptionChange = { documentCreateViewModel.updateDescription(it) }
+                                )
+                            }
+                        } else {
+                            DocumentCreateScreen(
+                                documentType = documentType,
+                                warehouses = emptyList(),
+                                documentItems = emptyList(),
+                                nomenclature = emptyList(),
+                                units = emptyList(),
+                                isLoading = false,
+                                errorMessage = "DocumentCreateViewModel не инициализирован",
+                                documentNumber = "",
+                                selectedWarehouse = null,
+                                documentDate = Date(),
+                                description = "",
+                                onBackClick = { currentScreen = "documents_stock_input" },
+                                onSaveClick = { },
+                                onAddItemClick = { },
+                                onEditItemClick = { },
+                                onDeleteItemClick = { },
+                                onClearError = { },
+                                onDocumentNumberChange = { },
+                                onWarehouseChange = { },
+                                onDateChange = { },
+                                onDescriptionChange = { }
+                            )
                         }
                     }
                 "warehouses" -> {

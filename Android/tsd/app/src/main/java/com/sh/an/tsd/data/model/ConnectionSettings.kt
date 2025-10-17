@@ -6,10 +6,12 @@ data class ConnectionSettings(
     val apiKey: String = ""
 ) {
     fun getBaseUrl(): String {
-        return if (port.isBlank()) {
-            serverUrl
+        val trimmedServerUrl = serverUrl.trim()
+        val trimmedPort = port.trim()
+        return if (trimmedPort.isBlank()) {
+            trimmedServerUrl
         } else {
-            "$serverUrl:$port"
+            "$trimmedServerUrl:$trimmedPort"
         }
     }
     
@@ -18,11 +20,12 @@ data class ConnectionSettings(
         if (baseUrl.isBlank()) {
             return "" // Возвращаем пустую строку, если настройки не заданы
         }
-        return if (baseUrl.startsWith("http://") || baseUrl.startsWith("https://")) {
+        val fullUrl = if (baseUrl.startsWith("http://") || baseUrl.startsWith("https://")) {
             baseUrl
         } else {
             "http://$baseUrl"
         }
+        return "$fullUrl/"
     }
 }
 

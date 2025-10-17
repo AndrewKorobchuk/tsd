@@ -49,3 +49,5 @@ interface DocumentDao {
     @Query("SELECT COUNT(*) FROM documents WHERE document_type = :documentType")
     suspend fun getDocumentsCountByType(documentType: String): Int
 }
+
+

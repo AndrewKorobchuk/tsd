@@ -24,21 +24,30 @@ class AuthRepository(private val settingsManager: SettingsManager) {
     
     suspend fun registerOAuthClient(): Result<OAuthClientResponse> {
         return try {
+            val settings = settingsManager.getConnectionSettings()
+            val baseUrl = settings.getFullUrl()
+            println("AuthRepository: Attempting to register OAuth client with URL: $baseUrl")
+            
             val clientData = OAuthClientCreate(
                 clientName = "TSD Mobile App",
-                redirectUris = listOf("http://localhost:3000/callback"),
+                redirectUris = listOf("http://localhost:8001/callback"),
                 scope = "read write"
             )
             
             val response = getAuthApiService().registerOAuthClient(clientData)
+            println("AuthRepository: OAuth registration response code: ${response.code()}")
             if (response.isSuccessful) {
                 val client = response.body()!!
                 settingsManager.saveOAuthClient(client)
+                println("AuthRepository: OAuth client registered successfully")
                 Result.success(client)
             } else {
-                Result.failure(Exception("Failed to register OAuth client: ${response.code()}"))
+                val errorBody = response.errorBody()?.string() ?: "Unknown error"
+                println("AuthRepository: OAuth registration failed: ${response.code()} - $errorBody")
+                Result.failure(Exception("Failed to register OAuth client: ${response.code()} - $errorBody"))
             }
         } catch (e: Exception) {
+            println("AuthRepository: OAuth registration exception: ${e.message}")
             Result.failure(e)
         }
     }
@@ -49,12 +58,17 @@ class AuthRepository(private val settingsManager: SettingsManager) {
             val clientId = settingsManager.getOAuthClientId()
             val clientSecret = settingsManager.getOAuthClientSecret()
             
+            println("AuthRepository: Login attempt - clientId: '$clientId', clientSecret: '${clientSecret.take(10)}...'")
+            
             if (clientId.isEmpty()) {
+                println("AuthRepository: No OAuth client found, registering new one")
                 // Регистрируем OAuth клиента, если его нет
                 val clientResult = registerOAuthClient()
                 if (clientResult.isFailure) {
                     return Result.failure(clientResult.exceptionOrNull()!!)
                 }
+            } else {
+                println("AuthRepository: Using existing OAuth client")
             }
             
             // Получаем токен
@@ -122,6 +136,15 @@ class AuthRepository(private val settingsManager: SettingsManager) {
     
     fun isLoggedIn(): Boolean {
         return settingsManager.isLoggedIn()
+    }
+    
+    fun hasConnectionSettings(): Boolean {
+        val settings = settingsManager.getConnectionSettings()
+        return settings.serverUrl.trim().isNotEmpty() && settings.port.trim().isNotEmpty()
+    }
+    
+    fun resetApiServiceFactory() {
+        apiServiceFactory.reset()
     }
     
     fun getCurrentUserData(): Triple<Int, String, String> {
